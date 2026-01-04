@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高三数学：基本立体图形、表面积与体积</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .ppt-container {
+            width: 90%;
+            max-width: 1000px;
+            aspect-ratio: 16 / 9;
+            background-color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px;
+            animation: fadeIn 0.5s;
+        }
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        h2 { color: #3498db; margin-top: 0; }
+        h3 { color: #e67e22; }
+        .content-body {
+            flex: 1;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        .concept-box {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 5px solid #3498db;
+            margin: 15px 0;
+        }
+        .formula-box {
+            background-color: #fff5e6;
+            padding: 15px;
+            border: 2px dashed #e67e22;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.4rem;
+            font-family: 'Times New Roman', serif;
+        }
+        .img-placeholder {
+            width: 100%;
+            height: 250px;
+            background-color: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+            border: 2px dashed #ccc;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: #eee;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .download-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .download-btn {
+            background-color: #27ae60;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: white;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .download-btn:hover { background-color: #219a52; }
+    </style>
+</head>
+<body>
+
+<div class="ppt-container">
+    <div class="slide active">
+        <h1>高三数学一轮复习</h1>
+        <h2>专题：基本立体图形、简单几何体的表面积与体积</h2>
+        <div class="content-body" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+            <p style="font-size: 1.5rem; margin-top: 50px;">在这里，我们把空间“看”得更清楚。</p>
+            <p>主讲教师：[你的名字]</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>第一部分：学会“观察”——空间的骨架</h2>
+        <div class="content-body">
+            <p>同学们，环顾四周，我们生活在一个三维世界里。</p>
+            <p>高楼大厦、水杯、篮球、冰淇淋筒……这些复杂的现实物体，在数学家的眼里，都可以抽象成最基本的几何体。</p>
+            <div class="concept-box">
+                我们把这些基本几何体分为两大“家族”：
+                <ul>
+                    <li><b>多面体 (Polyhedra)：</b> 由平面的“脸”围成的。例如：棱柱、棱锥、棱台。</li>
+                    <li><b>旋转体 (Solids of Revolution)：</b> 由一个平面图形绕着一根“轴”旋转而成的。例如：圆柱、圆锥、圆台、球。</li>
+                </ul>
+            </div>
+            <p>接下来，我们一个一个来拆解它们。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.1 多面体家族：棱柱 (Prism)</h2>
+        <div class="content-body">
+            <p><b>直观理解：</b> 想象一摞形状完全相同的纸片整齐地叠在一起。</p>
+            <div class="concept-box">
+                <b>结构特征：</b>
+                <ul>
+                    <li>有两个面互相平行且全等（称为<b>底面</b>）。</li>
+                    <li>其余各面都是四边形（称为<b>侧面</b>）。</li>
+                    <li>相邻侧面的公共边（称为<b>侧棱</b>）互相平行。</li>
+                </ul>
+            </div>
+            <p>根据底面是三角形、四边形...我们分别称之为三棱柱、四棱柱...</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>重点辨析：棱柱的“直”与“正”</h2>
+        <div class="content-body">
+            <p>这是高考中极易混淆的概念，请大家务必看图区分！</p>
+            <div style="display: flex; justify-content: space-around;">
+                <div style="flex: 1; margin-right: 10px;">
+                    <h3>A. 斜棱柱</h3>
+                    <div class="img-placeholder">[示意图：一个歪斜的棱柱]</div>
+                    <p>侧棱不垂直于底面。“站得不直”。</p>
+                </div>
+                <div style="flex: 1; margin-right: 10px; border-left: 2px solid #eee; padding-left: 10px;">
+                    <h3>B. <span class="highlight">直棱柱</span></h3>
+                    <div class="img-placeholder">[示意图：一个方正的棱柱，侧棱垂直底面]</div>
+                    <p><b>侧棱垂直于底面。</b>侧面都是矩形。“站直了”。</p>
+                </div>
+                <div style="flex: 1; border-left: 2px solid #eee; padding-left: 10px;">
+                    <h3>C. <span class="highlight">正棱柱</span></h3>
+                    <div class="img-placeholder">[示意图：底面是正多边形的直棱柱]</div>
+                    <p>要求最高：它首先得是<b>直棱柱</b>，其次，它的底面必须是<b>正多边形</b>。</p>
+                </div>
+            </div>
+            <p class="highlight">思考：正方体和长方体属于哪一类？（答案：它们都是特殊的直棱柱，正方体是特殊的正四棱柱）</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.2 多面体家族：棱锥与棱台</h2>
+        <div class="content-body">
+            <div style="display: flex;">
+                <div style="flex: 1; padding-right: 20px;">
+                    <h3>棱锥 (Pyramid)</h3>
+                    <p><b>直观理解：</b> 金字塔。有一个底面，所有侧面的三角形都汇聚到一个顶点。</p>
+                    <div class="concept-box">
+                        <b>正棱锥：</b> 底面是正多边形，且顶点在底面的射影是底面中心的棱锥。（它看起来是“正”的，没有歪）。
+                    </div>
+                </div>
+                <div style="flex: 1; border-left: 2px solid #ddd; padding-left: 20px;">
+                    <h3>棱台 (Frustum of a prism)</h3>
+                    <p><b>直观理解：</b> 被“砍了一刀”的棱锥。</p>
+                    <div class="concept-box">
+                        用一个平行于棱锥底面的平面去截棱锥，底面与截面之间的部分就是棱台。
+                        <br><b>特征：</b> 上下底面是相似多边形；侧棱延长后交于一点。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.3 旋转体家族：圆柱、圆锥、圆台</h2>
+        <div class="content-body">
+            <p><b>直观理解：</b> 想象一下陶艺制作，转盘上的泥巴旋转成型。</p>
+            <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div style="flex: 1;">
+                    <h3>圆柱</h3>
+                    <p>矩形绕一边旋转一周</p>
+                    <div class="img-placeholder" style="height: 150px;">[矩形旋转动画示意]</div>
+                </div>
+                <div style="flex: 1;">
+                    <h3>圆锥</h3>
+                    <p>直角三角形绕直角边旋转一周</p>
+                    <div class="img-placeholder" style="height: 150px;">[直角三角形旋转动画示意]</div>
+                </div>
+                <div style="flex: 1;">
+                    <h3>圆台</h3>
+                    <p>直角梯形绕垂直于底边的腰旋转一周</p>
+                    <div class="img-placeholder" style="height: 150px;">[直角梯形旋转动画示意]</div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 20px;">它们的共同点：都有一条“轴”，横截面都是圆。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.4 旋转体家族：球 (Sphere)</h2>
+        <div class="content-body">
+            <div style="display: flex; align-items: center;">
+                <div style="flex: 1;">
+                    <h3>定义</h3>
+                    <p>半圆绕着它的直径所在的直线旋转一周所形成的曲面围成的几何体。</p>
+                    <h3>结构特征</h3>
+                    <ul>
+                        <li><b>球心：</b> 半圆的圆心。</li>
+                        <li><b>半径：</b> 连接球心和球面上任意一点的线段。</li>
+                        <li><b>直径：</b> 连接球面上两点且通过球心的线段。</li>
+                    </ul>
+                    <p class="highlight">球是最完美的对称图形，它没有“棱”，也没有“底面”。</p>
+                </div>
+                <div style="flex: 1; margin-left: 20px;">
+                    <div class="img-placeholder" style="height: 300px;">[示意图：半圆旋转成球，标出球心和半径]</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.5 简单组合体</h2>
+        <div class="content-body">
+            <p>现实世界中的物体往往不是单一的基本图形，而是它们的组合。</p>
+            <div class="concept-box">
+                <b>两种主要的组合方式：</b>
+                <ol>
+                    <li><b>拼接（累加）：</b> 比如一个圆柱上面放一个圆锥（像粮仓顶），或者两个正方体拼在一起。
+                        <br><i>注意：计算表面积时，接触面要减掉！</i>
+                    </li>
+                    <li><b>切割（挖去）：</b> 比如在一个正方体里面挖去一个圆柱形是个洞。
+                        <br><i>注意：计算表面积时，可能反而增加了内部的表面积！</i>
+                    </li>
+                </ol>
+            </div>
+            <div class="img-placeholder" style="height: 150px;">[示意图：展示拼接体和挖空体的例子]</div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>第二部分：学会“度量”——表面积</h2>
+        <div class="content-body">
+            <h3>核心思想：展开图 (Net)</h3>
+            <p>计算立体图形的表面积，最直观的方法就是把它“剪开”，铺平在桌面上，变成我们熟悉的平面图形，然后求和。</p>
+            <div class="concept-box">
+                <p><b>多面体的表面积 = 所有面的面积之和</b></p>
+                <p><b>旋转体的表面积 = 底面积 + 侧面积</b></p>
+            </div>
+            <p>想象一下你正在包装一个礼物盒，你需要多少包装纸？这就是表面积。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>2.1 柱体、锥体、台体的表面积公式</h2>
+        <div class="content-body">
+            <p>关键在于理解<b>侧面展开图</b>是什么形状。</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;" border="1">
+                <tr style="background-color: #3498db; color: white;">
+                    <th>几何体</th>
+                    <th>侧面展开图形状</th>
+                    <th>表面积公式 (S)</th>
+                </tr>
+                <tr>
+                    <td><b>直棱柱</b></td>
+                    <td>矩形</td>
+                    <td>S = 2S<sub>底</sub> + S<sub>侧</sub><br>(S<sub>侧</sub> = 底面周长 × 高)</td>
+                </tr>
+                <tr>
+                    <td><b>圆柱</b></td>
+                    <td>矩形</td>
+                    <td>S = 2πr² + 2πrh = 2πr(r+h)</td>
+                </tr>
+                <tr>
+                    <td><b>正棱锥</b></td>
+                    <td>全等的等腰三角形</td>
+                    <td>S = S<sub>底</sub> + S<sub>侧</sub><br>(S<sub>侧</sub> = ½ × 底面周长 × 斜高)</td>
+                </tr>
+                 <tr>
+                    <td><b>圆锥</b></td>
+                    <td>扇形</td>
+                    <td>S = πr² + πrl = πr(r+l)<br>(l为母线长)</td>
+                </tr>
+                 <tr>
+                    <td><b>圆台</b></td>
+                    <td>扇环</td>
+                    <td>S = S<sub>上</sub> + S<sub>下</sub> + S<sub>侧</sub><br>S = πr'² + πr² + π(r+r')l</td>
+                </tr>
+            </table>
+            <p style="font-size: 0.9rem; color: #666;">注：r'为上底半径，r为下底半径，l为母线长，h为高。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>2.2 球的表面积</h2>
+        <div class="content-body">
+            <p>球是个特例，我们很难把它完美地展开成一个平面（这就是为什么世界地图总会有变形）。</p>
+            <p>这个公式我们需要记住，它的推导涉及到微积分思想，但我们可以感性认识：球的表面积是它最大横截圆面积的4倍。</p>
+            <div class="formula-box">
+                球的表面积公式：<br>
+                <span style="font-size: 2rem;">S = 4πR²</span>
+            </div>
+            <p>R 是球的半径。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>第三部分：学会“度量”——体积</h2>
+        <div class="content-body">
+            <h3>核心思想：空间占据的大小</h3>
+            <p>直观理解：</p>
+            <ul>
+                <li><b>柱体（棱柱、圆柱）：</b> 想象把一张张相同的纸片（底面S）垂直向上堆叠到高度h。</li>
+                <li><b>锥体（棱锥、圆锥）：</b> 想象往一个漏斗里倒沙子。</li>
+            </ul>
+            <div class="concept-box" style="text-align: center;">
+                <p><b>柱体体积 = 底面积 × 高</b></p>
+                <p><b>锥体体积 = (1/3) × 底面积 × 高</b></p>
+            </div>
+            <p class="highlight">实验回顾：将等底等高的圆锥装满水倒入圆柱，正好需要倒3次才能装满。</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>3.1 柱、锥、台的体积公式汇总</h2>
+        <div class="content-body">
+             <div class="formula-box" style="text-align: left;">
+                <p><b>柱体 (Cylinder & Prism):</b> <br><span style="font-size: 1.5rem; margin-left: 20px;">V = Sh</span></p>
+
+                <p><b>锥体 (Cone & Pyramid):</b> <br><span style="font-size: 1.5rem; margin-left: 20px;">V = ⅓ Sh</span></p>
+
+                <p><b>台体 (Frustum):</b> <br><span style="font-size: 1.2rem; margin-left: 20px;">V = ⅓ h (S<sub>上</sub> + S<sub>下</sub> + √[S<sub>上</sub>S<sub>下</sub>])</span></p>
+                <p style="font-size: 0.9rem; color: #666; margin-left: 20px;">(台体公式是万能公式：当S<sub>上</sub>=S<sub>下</sub>时变成柱体；当S<sub>上</sub>=0时变成锥体)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>3.2 球的体积与“祖暅原理”</h2>
+        <div class="content-body">
+            <p>球的体积公式是怎么来的？中国古代数学家祖冲之父子提供了绝妙的直观证明——<b>祖暅原理</b>。</p>
+            <div class="concept-box">
+                <b>祖暅原理 (Cavalieri's principle)：</b> “幂势既同，则积不容异”。
+                <br>意思是：两个等高立体，如果它们在每一等高处的水平截面积都相等，那么它们的体积也相等。
+            </div>
+            <p><b>直观演示：</b></p>
+            <p>我们将一个半径为R的半球，与一个经过特殊设计的圆柱（挖去了一个倒立圆锥）进行对比。神奇的是，在任意高度h处，它们的截面环面积竟然是相等的！</p>
+            <div class="img-placeholder" style="height: 120px;">[示意图：半球与牟合方盖/挖空圆柱的截面对比]</div>
+            <p>通过这个原理推导出：</p>
+            <div class="formula-box">
+                球的体积公式：<br>
+                <span style="font-size: 2rem;">V = ⁴/₃ πR³</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>总结与回顾</h2>
+        <div class="content-body">
+            <p>今天我们完成了一次从“看”到“算”的旅程。</p>
+            <ol>
+                <li><b>认结构：</b> 分清柱、锥、台、球，特别是直棱柱与正棱柱的区别。</li>
+                <li><b>想展开：</b> 计算表面积时，脑海中要有展开图（矩形、三角形、扇形）。</li>
+                <li><b>懂原理：</b> 计算体积时，记住“堆叠”(V=Sh) 和 “三分之一”(V=⅓Sh)，理解祖暅原理。</li>
+            </ol>
+            <p class="highlight" style="text-align: center; margin-top: 30px;">立体几何不抽象，它就在我们身边。多观察，多想象！</p>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button id="prevBtn" disabled>上一页</button>
+        <span id="slideCounter">1 / 15</span>
+        <button id="nextBtn">下一页</button>
+    </div>
+</div>
+
+<div class="download-section">
+    <p>希望这份PPT能帮助你更好地理解立体几何基础。</p>
+    <a href="#" class="download-btn" onclick="alert('【模拟下载提示】\n\n在真实环境中，点击此按钮将下载生成的 .pptx 文件。\n\n由于我是 AI 助手，无法直接托管文件，特此通过弹窗模拟下载动作。请知悉。'); return false;">
+        📥 下载此PPT (模拟)
+    </a>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const slideCounter = document.getElementById('slideCounter');
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if (i === index) {
+                slide.classList.add('active');
+            }
+        });
+        updateButtons();
+        slideCounter.textContent = `${index + 1} / ${slides.length}`;
+    }
+
+    function updateButtons() {
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    prevBtn.addEventListener('click', () => {
+        if (currentSlide > 0) {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        if (currentSlide < slides.length - 1) {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+    });
+
+    // Initialize
+    showSlide(currentSlide);
+</script>
+
+</body>
+</html>
