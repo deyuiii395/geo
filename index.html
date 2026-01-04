@@ -119,8 +119,8 @@
 
         <!-- View Mode Controls (Solid vs Net) -->
         <div id="view-controls" class="glass-panel rounded-lg p-2 flex gap-2">
-            <button class="mode-btn active" id="btn-solid" onclick="setViewMode('solid')">立体模型</button>
-            <button class="mode-btn" id="btn-net" onclick="setViewMode('net')">展开演示</button>
+            <button class="mode-btn active" id="btn-solid" onclick="toggleViewMode('solid')">立体模型</button>
+            <button class="mode-btn" id="btn-net" onclick="toggleViewMode('net')">展开演示</button>
         </div>
     </div>
 
@@ -288,6 +288,10 @@
         const COLOR_FACE_INNER = 0x2563eb;
         const COLOR_EDGE = 0x93c5fd;
 
+        // Camera presets
+        const CAM_POS_ISO = new THREE.Vector3(6, 5, 6);
+        const CAM_POS_TOP = new THREE.Vector3(0, 9, 0);
+
         function init() {
             if (typeof THREE === 'undefined') {
                 document.getElementById('loading-overlay').innerHTML = '<span style="color: #ef4444;">资源加载失败，请刷新或检查网络。</span>';
@@ -300,7 +304,7 @@
             scene.fog = new THREE.FogExp2(0x0f172a, 0.035);
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(6, 5, 6);
+            camera.position.copy(CAM_POS_ISO);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -355,42 +359,83 @@
             // Show/Hide Unfold button (Sphere cannot unfold)
             const btnNet = document.getElementById('btn-net');
             if (key === 'sphere') {
-                if (currentViewMode === 'net') setViewMode('solid'); // Force solid
+                if (currentViewMode === 'net') toggleViewMode('solid'); 
                 btnNet.style.display = 'none';
             } else {
                 btnNet.style.display = 'inline-block';
             }
 
             updateInfoPanel(geometryData[key]);
-            rebuildScene();
+            
+            // Reset to solid view when changing shape for consistency
+            currentViewMode = 'solid';
+            document.getElementById('btn-solid').classList.add('active');
+            document.getElementById('btn-net').classList.remove('active');
+            moveCamera(CAM_POS_ISO);
+            
+            rebuildScene('solid'); 
         }
 
         function setPrismType(type) {
             currentPrismType = type;
-            // Update buttons
             document.querySelectorAll('#prism-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            rebuildScene();
+            
+            // Rebuild in current mode
+            if(currentViewMode === 'net') {
+                // If in net mode, rebuild closed then animate open instantly? 
+                // Better: rebuild closed, then animate open.
+                rebuildScene('net');
+                animateParts('open', 1000);
+            } else {
+                rebuildScene('solid');
+            }
         }
 
-        function setViewMode(mode) {
+        function toggleViewMode(mode) {
+            if (mode === currentViewMode) return;
             currentViewMode = mode;
+
+            // UI Toggle
             document.querySelectorAll('#view-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(mode === 'solid' ? 'btn-solid' : 'btn-net').classList.add('active');
-            
-            if (currentViewMode === 'net') {
+
+            if (mode === 'net') {
+                // 1. Switch to Net Geometry (built in Closed state)
+                rebuildScene('net');
+                // 2. Animate to Open State
+                animateParts('open', 2500);
+                // 3. Move Camera to Top View
+                moveCamera(CAM_POS_TOP);
+                // 4. Disable AutoRotate for better inspection
                 isAutoRotate = false;
                 document.getElementById('autoRotate').checked = false;
-                // Animate Unfold
-                startUnfoldAnimation();
+
             } else {
-                rebuildScene(); // Reset to closed state
+                // Solid Mode Requested
+                // 1. Animate back to Closed State (Fold)
+                animateParts('closed', 1500);
+                // 2. Move Camera back to Isometric
+                moveCamera(CAM_POS_ISO);
+                // 3. Enable AutoRotate (optional, good for "display")
+                isAutoRotate = true;
+                document.getElementById('autoRotate').checked = true;
+
+                // 4. After animation, swap to true Solid Mesh for perfection (optional but cleaner)
+                // We use a timeout roughly matching the animation duration
+                setTimeout(() => {
+                    if(currentViewMode === 'solid') rebuildScene('solid');
+                }, 1600);
             }
         }
 
         function toggleAutoRotate(val) { isAutoRotate = val; }
         function toggleWireframe(val) { 
             isWireframe = val;
+            updateWireframeState();
+        }
+
+        function updateWireframeState() {
             if (activeGroup) {
                 activeGroup.traverse(child => {
                     if (child.isMesh && child.material) {
@@ -401,7 +446,7 @@
             }
         }
 
-        // --- 3D Building Blocks ---
+        // --- 3D Scene Management ---
 
         function clearScene() {
             if (activeGroup) {
@@ -431,65 +476,96 @@
             });
         }
 
-        function rebuildScene() {
+        function rebuildScene(modeOverride) {
             clearScene();
             activeGroup = new THREE.Group();
             scene.add(activeGroup);
 
             const mat = getCommonMaterial();
+            const mode = modeOverride || currentViewMode;
 
-            if (currentShapeKey === 'prism') buildPrism(mat);
-            else if (currentShapeKey === 'pyramid') buildPyramid(mat);
-            else if (currentShapeKey === 'frustum_poly') buildPolyFrustum(mat);
-            else if (currentShapeKey === 'cylinder') buildCylinder(mat);
-            else if (currentShapeKey === 'cone') buildCone(mat);
-            else if (currentShapeKey === 'frustum_circ') buildCircFrustum(mat);
+            // Important: "Net" mode builds the shape in its CLOSED (assembled) state initially,
+            // ready to be animated open.
+            
+            if (currentShapeKey === 'prism') buildPrism(mat, mode);
+            else if (currentShapeKey === 'pyramid') buildPyramid(mat, mode);
+            else if (currentShapeKey === 'frustum_poly') buildPolyFrustum(mat, mode);
+            else if (currentShapeKey === 'cylinder') buildCylinder(mat, mode);
+            else if (currentShapeKey === 'cone') buildCone(mat, mode);
+            else if (currentShapeKey === 'frustum_circ') buildCircFrustum(mat, mode);
             else if (currentShapeKey === 'sphere') buildSphere(mat);
+        }
 
-            // If in Net mode, trigger animation immediately after build if applicable
-            // But for simple shapes, we might build the net directly.
-            if (currentViewMode === 'net') {
-                // For cylinder/cone/sphere, we build the net directly in build functions
-                // For polyhedra, we animate them open.
-                startUnfoldAnimation();
-            }
+        // --- Camera Animation ---
+        function moveCamera(targetPos) {
+            new TWEEN.Tween(camera.position)
+                .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 2000)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .onUpdate(() => controls.update())
+                .start();
+                
+            // Also reset target to center
+            new TWEEN.Tween(controls.target)
+                .to({ x: 0, y: 0, z: 0 }, 2000)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .start();
+        }
+
+        // --- Part Animation System ---
+        function animateParts(targetState, duration) {
+            // targetState: 'open' or 'closed'
+            activeGroup.traverse(child => {
+                const data = child.userData;
+                
+                // Rotation Animation (Polyhedra)
+                if (data.isSide || data.isLid) {
+                    const targetRot = targetState === 'open' ? data.openRot : data.closedRot;
+                    const mesh = data.isLid ? child : child.children[0]; // Lid is group, Side has mesh inside group
+                    
+                    if (targetRot !== undefined && mesh) {
+                        new TWEEN.Tween(mesh.rotation)
+                            .to({ x: targetRot }, duration)
+                            .easing(targetState === 'open' ? TWEEN.Easing.Back.Out : TWEEN.Easing.Cubic.InOut) // Pop out, smooth in
+                            .delay(data.isLid && targetState === 'open' ? duration * 0.3 : 0) // Delay lid on open
+                            .start();
+                    }
+                }
+                
+                // Position Animation (Rotation Bodies / Parts)
+                if (data.isPart) {
+                    const targetPos = targetState === 'open' ? data.openPos : data.closedPos;
+                    if (targetPos) {
+                         new TWEEN.Tween(child.position)
+                            .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, duration)
+                            .easing(TWEEN.Easing.Cubic.InOut)
+                            .start();
+                    }
+                }
+            });
         }
 
         // --- Geometry Builders ---
 
-        // 1. Prism (Complex: supports Oblique & Unfold)
-        function buildPrism(material) {
+        // 1. Prism
+        function buildPrism(material, mode) {
             const sides = 6;
             const radius = 1.5;
             const height = 3;
-            const sideWidth = 2 * radius * Math.sin(Math.PI / sides); // approx
+            const sideWidth = 2 * radius * Math.sin(Math.PI / sides);
             
-            // Base Group (Fixed)
+            // Base
             const baseGeo = new THREE.CircleGeometry(radius, sides);
             const baseMesh = new THREE.Mesh(baseGeo, material);
             baseMesh.rotation.x = -Math.PI / 2;
             activeGroup.add(baseMesh);
             addEdge(baseMesh, baseGeo);
 
-            // Top Cap (To be animated)
-            const topGeo = new THREE.CircleGeometry(radius, sides);
-            const topMesh = new THREE.Mesh(topGeo, material);
-            topMesh.rotation.x = -Math.PI / 2;
-            topMesh.position.y = height;
-            // Shear adjustment for Oblique
-            if (currentPrismType === 'oblique') topMesh.position.x = 1.5; 
-            
-            // We attach Top Cap to one of the side faces later for unfolding logic, 
-            // OR just let it float for solid view.
-            // For Solid View, standard mesh is easier.
-            if (currentViewMode === 'solid') {
-                // Use standard geometry for solid view to ensure water-tightness
+            if (mode === 'solid') {
                 let geo;
                 if (currentPrismType === 'oblique') {
-                    // Shear Matrix
                     geo = new THREE.CylinderGeometry(radius, radius, height, sides);
-                    const shearM = new THREE.Matrix4().makeShear(0.5, 0, 0, 0, 0, 0); // Shear X by Y
-                    geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, height/2, 0)); // Move pivot
+                    const shearM = new THREE.Matrix4().makeShear(0.5, 0, 0, 0, 0, 0);
+                    geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, height/2, 0));
                     geo.applyMatrix4(shearM);
                     geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -height/2, 0));
                 } else {
@@ -499,87 +575,84 @@
                 mesh.position.y = height / 2;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
-                // Hide manual base/top in solid mode to avoid z-fighting
                 baseMesh.visible = false;
-                topMesh.visible = false;
             } else {
-                // Net Mode: Construct separate faces
-                // Sides
+                // Net Mode (Built Closed)
+                const topGeo = new THREE.CircleGeometry(radius, sides);
+                const topMesh = new THREE.Mesh(topGeo, material);
+                topMesh.rotation.x = -Math.PI / 2;
+                
                 for (let i = 0; i < sides; i++) {
                     const angle = (i / sides) * Math.PI * 2;
-                    // Pivot container located at the base edge
                     const pivotGroup = new THREE.Group();
                     
                     const x = Math.cos(angle + Math.PI/sides) * (radius * Math.cos(Math.PI/sides));
                     const z = Math.sin(angle + Math.PI/sides) * (radius * Math.cos(Math.PI/sides));
                     
                     pivotGroup.position.set(x, 0, z);
-                    pivotGroup.rotation.y = -angle - Math.PI/sides; // Face outward
+                    pivotGroup.rotation.y = -angle - Math.PI/sides;
                     
-                    // The Face Mesh
-                    // For oblique, the face is a parallelogram. 
                     let faceGeo;
                     if (currentPrismType === 'oblique') {
-                        // Create parallelogram shape
                         const shape = new THREE.Shape();
                         shape.moveTo(-sideWidth/2, 0);
                         shape.lineTo(sideWidth/2, 0);
-                        shape.lineTo(sideWidth/2 + 0.75, height); // Shift top x
+                        shape.lineTo(sideWidth/2 + 0.75, height);
                         shape.lineTo(-sideWidth/2 + 0.75, height);
                         shape.lineTo(-sideWidth/2, 0);
                         faceGeo = new THREE.ShapeGeometry(shape);
                     } else {
                         faceGeo = new THREE.PlaneGeometry(sideWidth, height);
-                        faceGeo.translate(0, height/2, 0); // Pivot at bottom
+                        faceGeo.translate(0, height/2, 0);
                     }
 
                     const face = new THREE.Mesh(faceGeo, material);
                     addEdge(face, faceGeo);
                     
+                    // Config for Animation
+                    // Closed: 0 (Vertical). Open: -PI/2 (Flat out)
+                    pivotGroup.userData = { isSide: true, closedRot: 0, openRot: -Math.PI/2 };
+                    face.rotation.x = 0; // Start Closed
+
                     pivotGroup.add(face);
                     activeGroup.add(pivotGroup);
 
-                    // Animation Tagging
-                    pivotGroup.userData = { isSide: true, index: i };
-
-                    // Attach Top to the last side (index 0)
+                    // Attach Top Lid to index 0
                     if (i === 0) {
                         const topPivot = new THREE.Group();
-                        // Position at top of face
                         if (currentPrismType === 'oblique') topPivot.position.set(0.75, height, 0);
                         else topPivot.position.set(0, height, 0);
                         
                         topPivot.add(topMesh);
-                        topMesh.position.set(0, 0, 0); // Local to pivot
-                        topMesh.rotation.x = -Math.PI/2; // Initial
-                        // Adjust top mesh position relative to hinge
-                        // Hinge is at bottom of top hex? Complex.
-                        // Simplified: Attach Top Center to pivot.
-                        // Better: Center of hex is offset from edge.
                         const distToCenter = radius * Math.cos(Math.PI/sides);
-                        topMesh.position.z = -distToCenter; 
-
+                        topMesh.position.set(0, 0, -distToCenter); 
+                        
                         face.add(topPivot);
-                        topPivot.userData = { isLid: true };
+                        // Lid Anim: Closed: -PI/2 (Relative to side? No, side is vertical, lid is horiz. Relative rot is -PI/2).
+                        // Open: -PI/2 relative to side which is flat? 
+                        // Wait. Face is vertical (0). Lid is Horizontal (-PI/2). So ClosedRot = -PI/2.
+                        // When Face goes Flat (-PI/2), Lid follows. Lid needs to rotate FURTHER -PI/2 to be flat on ground?
+                        // If Face is -90, Lid is vertical down. Needs another -90 to be flat.
+                        topPivot.userData = { isLid: true, closedRot: -Math.PI/2, openRot: -Math.PI };
+                        topPivot.rotation.x = -Math.PI/2; // Start Closed
                     }
                 }
             }
         }
 
         // 2. Pyramid
-        function buildPyramid(material) {
+        function buildPyramid(material, mode) {
             const sideCount = 4;
             const radius = 2;
             const height = 3;
             
-            // Base
-            const baseGeo = new THREE.CircleGeometry(radius, sideCount, Math.PI/4); // Rotate to align square
+            const baseGeo = new THREE.CircleGeometry(radius, sideCount, Math.PI/4);
             const baseMesh = new THREE.Mesh(baseGeo, material);
             baseMesh.rotation.x = -Math.PI / 2;
             activeGroup.add(baseMesh);
             addEdge(baseMesh, baseGeo);
 
-            if (currentViewMode === 'solid') {
+            if (mode === 'solid') {
                 const geo = new THREE.ConeGeometry(radius, height, sideCount);
                 const mesh = new THREE.Mesh(geo, material);
                 mesh.position.y = height/2;
@@ -587,8 +660,7 @@
                 addEdge(mesh, geo);
                 baseMesh.visible = false;
             } else {
-                // Net Mode
-                const sideWidth = radius * Math.sqrt(2); // Square side
+                const sideWidth = radius * Math.sqrt(2);
                 const slantHeight = Math.sqrt((sideWidth/2)**2 + height**2);
                 
                 for (let i = 0; i < sideCount; i++) {
@@ -599,60 +671,30 @@
                     pivotGroup.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
                     pivotGroup.rotation.y = -angle - Math.PI/2;
 
-                    // Triangle Face
                     const shape = new THREE.Shape();
                     shape.moveTo(-sideWidth/2, 0);
                     shape.lineTo(sideWidth/2, 0);
                     shape.lineTo(0, slantHeight);
                     shape.lineTo(-sideWidth/2, 0);
                     const faceGeo = new THREE.ShapeGeometry(shape);
-                    
                     const face = new THREE.Mesh(faceGeo, material);
                     
-                    // Correct Initial Closed State
-                    // For animation to work "Open", we start "Closed"
-                    // Angle calculation:
-                    // Dihedral angle of pyramid face with base.
-                    // tan(theta) = h / (sideW/2)
-                    // face.rotation.x rotates around X axis (base edge).
-                    // Upright (flat on ZY plane) is 0? No, flat on ground is -PI/2?
-                    // Geometry is created flat on XY plane (Triangle pointing up Y)
-                    // We need to tilt it 'in'.
-                    // Vertical wall = 0.
-                    // Tilted in = positive rotation?
-                    // Let's check coord system.
-                    // Y is up in 3D world.
-                    // Face Pivot: Y axis is outward normal of base edge. X is tangent. Z is up? 
-                    // Pivot rotation Y = -angle-PI/2 sets the local system.
-                    // Local X is along the base edge. Local Y is up. Local Z is inward/outward.
-                    // To close the pyramid: Rotate around X.
-                    // 0 = vertical wall.
-                    // We need to rotate 'in' towards the center.
-                    // height = 3, half-base = 1.414.
-                    // Angle from vertical = atan(1.414/3).
-                    // Rotation = - (PI/2 - atan(3/1.414)) ? 
-                    // Let's just set it to "Closed" visually.
-                    // Vertical is 0. Flat out is -PI/2 (or PI/2).
-                    // We tilt 'in'. Positive rotation X.
-                    const tilt = Math.atan2(sideWidth/2, height); // Angle from vertical normal? No.
-                    // Angle of face with ground = atan(h / (sideW/2)).
-                    // Angle with vertical = 90 - Angle with ground.
-                    const angleFromVert = Math.atan2(sideWidth/2, height);
+                    // Calc Closed Angle
+                    const angleFromVert = Math.atan2(sideWidth/2, height); // Tilt IN
                     
-                    face.rotation.x = angleFromVert; 
+                    pivotGroup.userData = { isSide: true, closedRot: angleFromVert, openRot: -Math.PI/2 };
+                    face.rotation.x = angleFromVert; // Start Closed
 
                     addEdge(face, faceGeo);
                     pivotGroup.add(face);
                     activeGroup.add(pivotGroup);
-                    pivotGroup.userData = { isSide: true };
                 }
             }
         }
 
-        // 3. Cylinder & Cone & Frustums (Curved Surfaces)
-        // Implementing physical unrolling is hard. We switch models.
-        function buildCylinder(material) {
-            if (currentViewMode === 'solid') {
+        // 3. Cylinder
+        function buildCylinder(material, mode) {
+            if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32);
                 const mesh = new THREE.Mesh(geo, material);
                 mesh.position.y = 1.5;
@@ -663,8 +705,9 @@
             }
         }
 
-        function buildCone(material) {
-            if (currentViewMode === 'solid') {
+        // 4. Cone
+        function buildCone(material, mode) {
+            if (mode === 'solid') {
                 const geo = new THREE.ConeGeometry(2, 3, 32);
                 const mesh = new THREE.Mesh(geo, material);
                 mesh.position.y = 1.5;
@@ -675,48 +718,38 @@
             }
         }
 
-        function buildPolyFrustum(material) {
-             // Simplified: Frustum of Pyramid
-            if (currentViewMode === 'solid') {
+        // 5. PolyFrustum
+        function buildPolyFrustum(material, mode) {
+             const bottomR = 2; const topR = 1; const h = 2.5;
+             const sideW_bot = bottomR * Math.sqrt(2);
+             const sideW_top = topR * Math.sqrt(2);
+             const slantH = Math.sqrt(((sideW_bot - sideW_top)/2)**2 + h**2);
+
+            if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 4);
                 const mesh = new THREE.Mesh(geo, material);
                 mesh.position.y = 1.25;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
-                // Frustum Net: 4 trapezoids + 2 squares
-                const bottomR = 2; const topR = 1; const h = 2.5;
-                const sideW_bot = bottomR * Math.sqrt(2);
-                const sideW_top = topR * Math.sqrt(2);
-                const slantH = Math.sqrt(((sideW_bot - sideW_top)/2)**2 + h**2);
-
-                // Base
                 const baseGeo = new THREE.PlaneGeometry(sideW_bot, sideW_bot);
                 const base = new THREE.Mesh(baseGeo, material);
                 base.rotation.x = -Math.PI/2;
                 activeGroup.add(base);
                 addEdge(base, baseGeo);
 
-                // Top (floating nearby)
                 const topGeo = new THREE.PlaneGeometry(sideW_top, sideW_top);
                 const top = new THREE.Mesh(topGeo, material);
                 top.rotation.x = -Math.PI/2;
-                // Init position for animation: Start at top of frustum then move out
-                // Just place it in final position for now, animation will override if set
-                top.position.set(0, 0, -sideW_bot/2 - sideW_top/2 - slantH - 0.5); 
                 
-                // For PolyFrustum, we can animate the top moving out?
-                // Or treat it like a lid attached to a side?
-                // The prompt asks for intuitive structure.
-                // Attaching to a side (like prism) is better for structure.
-                // But current impl is separate piece. Let's animate it "sliding" out.
-                top.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, -sideW_bot/2 - sideW_top/2 - slantH - 0.5) };
-                top.position.set(0, h, 0); // Start at actual top height
+                // Top animation: Closed at height h, Open at far position
+                const openZ = -sideW_bot/2 - sideW_top/2 - slantH - 0.5;
+                top.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, openZ) };
+                top.position.set(0, h, 0); // Start Closed
                 
                 activeGroup.add(top);
                 addEdge(top, topGeo);
 
-                // Sides
                 for(let i=0; i<4; i++) {
                      const pivotGroup = new THREE.Group();
                      const angle = i * Math.PI/2;
@@ -724,7 +757,6 @@
                      pivotGroup.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
                      pivotGroup.rotation.y = -angle - Math.PI/2;
                      
-                     // Trapezoid
                      const shape = new THREE.Shape();
                      shape.moveTo(-sideW_bot/2, 0);
                      shape.lineTo(sideW_bot/2, 0);
@@ -733,35 +765,31 @@
                      const trapGeo = new THREE.ShapeGeometry(shape);
                      const mesh = new THREE.Mesh(trapGeo, material);
                      
-                     // Initial Closed Angle
-                     // Calculate tilt
-                     const run = (sideW_bot - sideW_top)/2;
-                     const rise = h;
-                     const angleFromVert = Math.atan2(run, rise); // Tilt in
-                     mesh.rotation.x = angleFromVert;
+                     const angleFromVert = Math.atan2((sideW_bot - sideW_top)/2, h);
+                     pivotGroup.userData = { isSide: true, closedRot: angleFromVert, openRot: -Math.PI/2 };
+                     mesh.rotation.x = angleFromVert; // Start Closed
 
                      pivotGroup.add(mesh);
                      activeGroup.add(pivotGroup);
                      addEdge(mesh, trapGeo);
-                     
-                     pivotGroup.userData = { isSide: true }; 
                 }
             }
         }
 
-        function buildCircFrustum(material) {
-            if (currentViewMode === 'solid') {
+        // 6. CircFrustum
+        function buildCircFrustum(material, mode) {
+            if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 32);
                 const mesh = new THREE.Mesh(geo, material);
                 mesh.position.y = 1.25;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
-                // Annulus Sector (Fan shape with hole)
                 buildNetForRotation(2, 1, 2.5, 'annulus');
             }
         }
 
+        // 7. Sphere
         function buildSphere(material) {
              const geo = new THREE.SphereGeometry(2, 32, 32);
              const mesh = new THREE.Mesh(geo, material);
@@ -770,30 +798,19 @@
              addEdge(mesh, geo);
         }
 
-        // Helper for Nets of Rotation Bodies (Decomposition Animation)
+        // Helper for Nets of Rotation Bodies (Decomposition)
         function buildNetForRotation(rBottom, rTop, h, type) {
             const group = new THREE.Group();
             
-            // 1. Bottom Circle
+            // Bottom Circle (Static)
             const c1 = new THREE.Mesh(new THREE.CircleGeometry(rBottom, 64), getCommonMaterial());
             c1.rotation.x = -Math.PI/2;
-            c1.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, 0) }; // Final pos is center? No.
-            // Let's layout: Side rect in middle, circles on top/bottom
-            // Or Side rect offset, circles in center.
-            // Layout: 
-            //      Circle (Top)
-            //      Rect (Side)
-            //      Circle (Bottom)
-            // Vertical strip layout on ground.
-            
-            // Actually, keep Bottom circle at (0,0,0) is fine.
             group.add(c1);
             addEdge(c1, c1.geometry);
 
-            // 2. Lateral Surface
             let latGeo;
-            let offsetZ = rBottom + 0.5;
             let latMesh;
+            let R_outer = 0, R_inner = 0;
             
             if (type === 'rect') {
                 // Cylinder
@@ -802,12 +819,9 @@
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
                 
-                // Final Position: Shifted along Z so it doesn't overlap circle
                 const finalZ = rBottom + h/2 + 0.5;
-                latMesh.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, finalZ) };
-                latMesh.position.set(0, h/2, 0); // Start at solid center
-                latMesh.scale.set(0, 1, 0); // Start collapsed width? Or just position.
-                // Let's animate Position. Start at center.
+                latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, finalZ) };
+                latMesh.position.set(0, h/2, 0); // Start Closed
                 
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
@@ -815,33 +829,29 @@
                 // Top Circle
                 const c2 = new THREE.Mesh(new THREE.CircleGeometry(rBottom, 64), getCommonMaterial());
                 c2.rotation.x = -Math.PI/2;
-                // Final Pos: Beyond the rect
                 const c2Z = finalZ + h/2 + rBottom + 0.5;
-                c2.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, c2Z) };
-                c2.position.set(0, h, 0); // Start at solid top
+                c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, c2Z) };
+                c2.position.set(0, h, 0); // Start Closed
                 
                 group.add(c2);
                 addEdge(c2, c2.geometry);
 
             } else if (type === 'sector' || type === 'annulus') {
-                // Cone/Frustum
                 const l = Math.sqrt((rBottom - rTop)**2 + h**2);
                 const circum = 2 * Math.PI * rBottom;
                 const theta = circum / l; 
                 
-                // Shape
                 const shape = new THREE.Shape();
                 shape.moveTo(0, 0);
                 
-                const R_outer = rTop === 0 ? l : l * rBottom / (rBottom - rTop);
-                const R_inner = rTop === 0 ? 0 : R_outer - l;
+                R_outer = rTop === 0 ? l : l * rBottom / (rBottom - rTop);
+                R_inner = rTop === 0 ? 0 : R_outer - l;
                 
                 if (type === 'annulus') {
                     shape.absarc(0, 0, R_inner, -theta/2 + Math.PI/2, theta/2 + Math.PI/2, false);
                     shape.absarc(0, 0, R_outer, theta/2 + Math.PI/2, -theta/2 + Math.PI/2, true);
                     shape.closePath();
                 } else {
-                    // Cone Sector
                     shape.moveTo(0, 0);
                     shape.arc(0, 0, R_outer, -theta/2 + Math.PI/2, theta/2 + Math.PI/2, false);
                     shape.closePath();
@@ -851,116 +861,42 @@
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
                 
-                // Center the sector roughly
-                // Centroid of sector is slightly up Y (in 2D).
-                // Let's just move it Z+
                 const finalZ = rBottom + R_inner + (R_outer-R_inner)/2 + 0.5;
-                latMesh.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, finalZ) };
+                latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, finalZ) };
                 latMesh.position.set(0, h/2, 0);
 
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
 
-                // Top Circle
                 if (rTop > 0) {
                     const c2 = new THREE.Mesh(new THREE.CircleGeometry(rTop, 32), getCommonMaterial());
                     c2.rotation.x = -Math.PI/2;
                     const c2Z = finalZ + (R_outer-R_inner)/2 + rTop + 0.5;
-                    c2.userData = { isPart: true, targetPos: new THREE.Vector3(0, 0, c2Z) };
+                    c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, c2Z) };
                     c2.position.set(0, h, 0);
                     group.add(c2);
                     addEdge(c2, c2.geometry);
                 }
             }
-            
-            // For animation, we start parts at "assembled" positions (approx) 
-            // then Move them to "targetPos".
-            // c1 stays at 0,0,0.
-            
             activeGroup.add(group);
         }
 
-
-        // --- Helper: Edges ---
         function addEdge(mesh, geo) {
             const edges = new THREE.EdgesGeometry(geo);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: COLOR_EDGE }));
             mesh.add(line);
         }
 
-        // --- Animation Logic (Unfolding) ---
-        function startUnfoldAnimation() {
-            if (!activeGroup) return;
-
-            // 1. Polyhedra Unfolding (Rotation based)
-            if (['prism', 'pyramid', 'frustum_poly'].includes(currentShapeKey)) {
-                
-                activeGroup.traverse(child => {
-                    // Animate Sides Opening
-                    if (child.userData.isSide) {
-                        const mesh = child.children[0];
-                        if (!mesh) return;
-                        
-                        // Rotate to -Math.PI/2 (Flat)
-                        new TWEEN.Tween(mesh.rotation)
-                            .to({ x: -Math.PI / 2 }, 2000)
-                            .easing(TWEEN.Easing.Quartic.InOut) // Smoother mechanical feel
-                            .start();
-                    }
-                    
-                    // Frustum Top sliding out (if configured as Part)
-                    if (child.userData.isPart && child.userData.targetPos) {
-                         new TWEEN.Tween(child.position)
-                            .to({ 
-                                x: child.userData.targetPos.x, 
-                                y: child.userData.targetPos.y, 
-                                z: child.userData.targetPos.z 
-                            }, 2000)
-                            .easing(TWEEN.Easing.Quartic.InOut)
-                            .start();
-                    }
-                });
-
-                // Top Lid logic (Prism) - Secondary Animation
-                activeGroup.traverse(child => {
-                     if (child.userData.isLid) {
-                         new TWEEN.Tween(child.rotation)
-                            .to({ x: -Math.PI / 2 }, 1500) 
-                            .delay(800) // Delay so it looks like it's pulled by the side
-                            .easing(TWEEN.Easing.Back.Out)
-                            .start();
-                     }
-                });
-            }
-            // 2. Rotation Bodies Unfolding (Decomposition/Translation based)
-            else if (['cylinder', 'cone', 'frustum_circ'].includes(currentShapeKey)) {
-                // Find all parts with targetPos and animate them
-                activeGroup.traverse(child => {
-                    if (child.userData.isPart && child.userData.targetPos) {
-                        // Position Tween
-                        new TWEEN.Tween(child.position)
-                            .to({ 
-                                x: child.userData.targetPos.x, 
-                                y: child.userData.targetPos.y, 
-                                z: child.userData.targetPos.z 
-                            }, 1500)
-                            .easing(TWEEN.Easing.Exponential.Out) // "Pop" out effect
-                            .start();
-                            
-                        // Scale Tween (optional, to grow from inside)
-                        // If we started scale at 0, we can tween to 1
-                        if (child.scale.x === 0) {
-                             new TWEEN.Tween(child.scale)
-                                .to({ x: 1, y: 1, z: 1 }, 1500)
-                                .easing(TWEEN.Easing.Elastic.Out)
-                                .start();
-                        }
-                    }
-                });
-            }
+        // --- Standard Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            controls.update();
+            if (isAutoRotate && activeGroup) activeGroup.rotation.y += 0.005;
+            renderer.render(scene, camera);
         }
 
-        // --- Update UI ---
+        // --- Helper: UI Update ---
         function updateInfoPanel(data) {
             document.getElementById('shape-title').innerText = data.title;
             
@@ -993,19 +929,6 @@
             if (window.MathJax) MathJax.typesetPromise();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            TWEEN.update();
-            controls.update();
-
-            if (isAutoRotate && activeGroup) {
-                activeGroup.rotation.y += 0.005;
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        // Start
         window.onload = init;
 
     </script>
