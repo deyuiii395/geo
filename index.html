@@ -32,27 +32,27 @@
         
         /* Glassmorphism UI Panels */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.9); /* Slightly more opaque for readability */
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #e2e8f0;
         }
 
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
 
         .nav-btn {
             transition: all 0.2s;
-            border-left: 3px solid transparent;
+            border-left: 4px solid transparent;
         }
-        .nav-btn:hover { background: rgba(59, 130, 246, 0.1); border-left-color: #60a5fa; padding-left: 1rem; }
-        .nav-btn.active { background: rgba(37, 99, 235, 0.2); border-left-color: #3b82f6; color: #fff; padding-left: 1rem; }
+        .nav-btn:hover { background: rgba(59, 130, 246, 0.1); border-left-color: #60a5fa; padding-left: 1.2rem; }
+        .nav-btn.active { background: rgba(37, 99, 235, 0.2); border-left-color: #3b82f6; color: #fff; padding-left: 1.2rem; }
 
         .math-display {
-            font-size: 1.1em;
-            margin: 10px 0;
+            font-size: 1.25em; /* Larger math */
+            margin: 12px 0;
             color: #93c5fd;
         }
 
@@ -62,27 +62,28 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #3b82f6;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             z-index: 5;
             text-align: center;
         }
 
         /* Toggle Switch */
+        .toggle-checkbox {
+            height: 1.5rem;
+            width: 3rem;
+        }
         .toggle-checkbox:checked {
             right: 0;
             border-color: #3b82f6;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #3b82f6;
         }
 
         /* Mode Controls */
         .mode-btn {
             background: rgba(30, 41, 59, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 8px 16px; /* Larger hit area */
+            border-radius: 8px;
+            font-size: 1rem; /* Larger text */
             cursor: pointer;
             transition: all 0.2s;
             color: #94a3b8;
@@ -91,7 +92,7 @@
             background: #2563eb;
             color: white;
             border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
         }
         .mode-btn:hover:not(.active) {
             background: rgba(59, 130, 246, 0.2);
@@ -103,68 +104,69 @@
     <!-- Loading Indicator -->
     <div id="loading-overlay">
         正在加载 3D 引擎资源...<br>
-        <span style="font-size: 0.8rem; color: #64748b;">如果长时间无法显示，请检查网络或代理设置</span>
+        <span style="font-size: 1rem; color: #64748b;">如果长时间无法显示，请检查网络或代理设置</span>
     </div>
 
     <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- Top Control Bar (Dynamic based on selection) -->
-    <div class="absolute top-4 left-72 z-20 flex gap-4" id="top-controls">
-        <!-- Prism Type Controls (Only visible for prism) -->
-        <div id="prism-controls" class="glass-panel rounded-lg p-2 flex gap-2 hidden">
+    <!-- Top Control Bar -->
+    <div class="absolute top-6 left-80 z-20 flex gap-4" id="top-controls">
+        <!-- Prism Type Controls -->
+        <div id="prism-controls" class="glass-panel rounded-lg p-2 flex gap-3 hidden">
             <button class="mode-btn active" onclick="setPrismType('right')">直棱柱</button>
             <button class="mode-btn" onclick="setPrismType('oblique')">斜棱柱</button>
         </div>
 
-        <!-- View Mode Controls (Solid vs Net) -->
-        <div id="view-controls" class="glass-panel rounded-lg p-2 flex gap-2">
+        <!-- View Mode Controls -->
+        <div id="view-controls" class="glass-panel rounded-lg p-2 flex gap-3">
             <button class="mode-btn active" id="btn-solid" onclick="toggleViewMode('solid')">立体模型</button>
             <button class="mode-btn" id="btn-net" onclick="toggleViewMode('net')">展开演示</button>
+            <button class="mode-btn hidden" id="btn-gen" onclick="toggleViewMode('gen')">生成演示</button>
         </div>
     </div>
 
     <!-- Left Sidebar: Controls -->
-    <div class="absolute top-0 left-0 h-full w-64 glass-panel flex flex-col z-10 transform transition-transform duration-300" id="sidebar">
+    <div class="absolute top-0 left-0 h-full w-72 glass-panel flex flex-col z-10 shadow-xl" id="sidebar">
         <div class="p-6 border-b border-gray-700">
-            <h1 class="text-xl font-bold text-blue-400">空间几何体</h1>
-            <p class="text-xs text-gray-400 mt-1">高三数学一轮复习</p>
+            <h1 class="text-2xl font-bold text-blue-400">空间几何体</h1>
+            <p class="text-sm text-gray-400 mt-2">高三数学一轮复习 · 交互系统</p>
         </div>
         
         <div class="flex-1 overflow-y-auto py-4">
-            <div class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">简单多面体</div>
-            <button class="nav-btn active w-full text-left px-6 py-3 text-sm" data-shape="prism" onclick="loadShape('prism')">棱柱 (Prism)</button>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="pyramid" onclick="loadShape('pyramid')">棱锥 (Pyramid)</button>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="frustum_poly" onclick="loadShape('frustum_poly')">棱台 (Frustum)</button>
+            <div class="px-6 text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 mt-2">简单多面体</div>
+            <button class="nav-btn active w-full text-left px-8 py-4 text-base" data-shape="prism" onclick="loadShape('prism')">棱柱 (Prism)</button>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="pyramid" onclick="loadShape('pyramid')">棱锥 (Pyramid)</button>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="frustum_poly" onclick="loadShape('frustum_poly')">棱台 (Frustum)</button>
             
-            <div class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">旋转体</div>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="cylinder" onclick="loadShape('cylinder')">圆柱 (Cylinder)</button>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="cone" onclick="loadShape('cone')">圆锥 (Cone)</button>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="frustum_circ" onclick="loadShape('frustum_circ')">圆台 (Frustum)</button>
-            <button class="nav-btn w-full text-left px-6 py-3 text-sm" data-shape="sphere" onclick="loadShape('sphere')">球 (Sphere)</button>
+            <div class="px-6 text-sm font-bold text-gray-500 uppercase tracking-wider mt-8 mb-3">旋转体</div>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="cylinder" onclick="loadShape('cylinder')">圆柱 (Cylinder)</button>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="cone" onclick="loadShape('cone')">圆锥 (Cone)</button>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="frustum_circ" onclick="loadShape('frustum_circ')">圆台 (Frustum)</button>
+            <button class="nav-btn w-full text-left px-8 py-4 text-base" data-shape="sphere" onclick="loadShape('sphere')">球 (Sphere)</button>
         </div>
 
-        <div class="p-4 border-t border-gray-700">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm">自动旋转</span>
-                <input type="checkbox" id="autoRotate" checked class="toggle-checkbox" onchange="toggleAutoRotate(this.checked)">
+        <div class="p-6 border-t border-gray-700 bg-slate-900/50">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-base">自动旋转</span>
+                <input type="checkbox" id="autoRotate" checked class="w-5 h-5 accent-blue-500 cursor-pointer" onchange="toggleAutoRotate(this.checked)">
             </div>
             <div class="flex items-center justify-between">
-                <span class="text-sm">透视模式</span>
-                <input type="checkbox" id="wireframeToggle" class="toggle-checkbox" onchange="toggleWireframe(this.checked)">
+                <span class="text-base">透视模式</span>
+                <input type="checkbox" id="wireframeToggle" class="w-5 h-5 accent-blue-500 cursor-pointer" onchange="toggleWireframe(this.checked)">
             </div>
-            <div class="mt-4 text-xs text-gray-500 text-center">
-                拖动鼠标旋转 · 滚轮缩放
+            <div class="mt-4 text-sm text-gray-500 text-center">
+                拖动旋转 · 滚轮缩放
             </div>
         </div>
     </div>
 
-    <!-- Right Panel: Info & Formulas -->
-    <div class="absolute top-4 right-4 w-96 glass-panel rounded-lg p-6 z-10 max-h-[90vh] overflow-y-auto shadow-2xl">
-        <h2 id="shape-title" class="text-2xl font-bold text-white mb-2">正六棱柱</h2>
-        <div class="w-16 h-1 bg-blue-500 mb-4 rounded"></div>
+    <!-- Right Panel: Info & Formulas (REDUCED WIDTH) -->
+    <div class="absolute top-6 right-6 w-[380px] glass-panel rounded-xl p-8 z-10 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <h2 id="shape-title" class="text-3xl font-bold text-white mb-3">正六棱柱</h2>
+        <div class="w-20 h-1.5 bg-blue-500 mb-6 rounded-full"></div>
         
-        <div id="shape-content" class="space-y-6">
+        <div id="shape-content" class="space-y-8">
             <!-- Content will be injected here via JS -->
         </div>
     </div>
@@ -219,6 +221,7 @@
                 title: "圆柱 (Cylinder)",
                 definition: "以矩形的一边所在直线为旋转轴，其余三边旋转形成的面所围成的旋转体。",
                 features: [
+                    "<strong>生成：</strong>矩形绕一边旋转一周。",
                     "<strong>展开图：</strong>侧面展开是一个矩形，长为底面周长 $2\\pi r$，宽为高 $h$。加上两个底面圆。",
                     "轴截面是矩形。"
                 ],
@@ -233,6 +236,7 @@
                 title: "圆锥 (Cone)",
                 definition: "以直角三角形的一条直角边所在直线为旋转轴，其余两边旋转形成的面所围成的旋转体。",
                 features: [
+                    "<strong>生成：</strong>直角三角形绕一直角边旋转一周。",
                     "<strong>展开图：</strong>侧面展开是一个扇形，半径为母线 $l$，弧长为 $2\\pi r$。加上一个底面圆。",
                     "轴截面是等腰三角形。"
                 ],
@@ -247,6 +251,7 @@
                 title: "圆台 (Frustum of Cone)",
                 definition: "用平行于圆锥底面的平面去截圆锥，底面和截面之间的部分。",
                 features: [
+                    "<strong>生成：</strong>直角梯形绕垂直于底的腰旋转一周。",
                     "<strong>展开图：</strong>侧面展开是一个扇环。加上大小两个底面圆。",
                     "轴截面是等腰梯形。"
                 ],
@@ -260,6 +265,7 @@
                 title: "球 (Sphere)",
                 definition: "以半圆的直径所在直线为旋转轴，半圆面旋转一周形成的几何体。",
                 features: [
+                    "<strong>生成：</strong>半圆绕直径旋转一周。",
                     "球是不可展曲面，无法在平面上完全无损展开（类似于剥橘子皮，总有撕裂或重叠）。",
                     "地图制作中的“投影”即是为了解决此问题。"
                 ],
@@ -275,7 +281,7 @@
         let scene, camera, renderer, controls;
         let currentShapeKey = 'prism';
         let currentPrismType = 'right'; // 'right' or 'oblique'
-        let currentViewMode = 'solid'; // 'solid' or 'net'
+        let currentViewMode = 'solid'; // 'solid', 'net', 'gen'
         
         let activeGroup = null; // Container for the current shape parts
         let unfoldTweens = []; // Array of tween objects
@@ -283,14 +289,26 @@
         let isWireframe = false;
         let isAutoRotate = true;
 
+        // Generation Animation State
+        let genProgress = 0; // 0 to 1
+        let isGenAnimating = false;
+        let genSpeed = 0.01;
+
         // Colors
         const COLOR_FACE = 0x3b82f6;
         const COLOR_FACE_INNER = 0x2563eb;
         const COLOR_EDGE = 0x93c5fd;
+        const COLOR_GEN_PLANE = 0xfacc15; // Yellow for generating plane
+        const COLOR_AXIS = 0xffffff;
 
         // Camera presets
         const CAM_POS_ISO = new THREE.Vector3(6, 5, 6);
-        const CAM_POS_TOP = new THREE.Vector3(0, 9, 0);
+        const CAM_POS_FRONT = new THREE.Vector3(0, 2, 9); 
+        const CAM_POS_NET_ROT = new THREE.Vector3(0, 25, 4); 
+        const CAM_POS_NET_POLY = new THREE.Vector3(0, 20, 0);
+        
+        // VISUAL CENTER TARGET: Look slightly up so models sitting on y=0 are centered
+        const LOOK_AT_CENTER = new THREE.Vector3(0, 1.5, 0);
 
         function init() {
             if (typeof THREE === 'undefined') {
@@ -314,6 +332,7 @@
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.target.copy(LOOK_AT_CENTER); // Initialize looking at center height
 
             // Lights
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -322,8 +341,9 @@
             dirLight.castShadow = true;
             scene.add(dirLight);
             
-            // Grid
+            // Grid - Slightly lowered to avoid z-fighting with mesh bottom
             const gridHelper = new THREE.GridHelper(20, 20, 0x1e293b, 0x1e293b);
+            gridHelper.position.y = -0.01;
             scene.add(gridHelper);
 
             // Initial Load
@@ -356,24 +376,44 @@
                 prismControls.classList.remove('flex');
             }
 
-            // Show/Hide Unfold button (Sphere cannot unfold)
+            // Button Visibility Logic
             const btnNet = document.getElementById('btn-net');
+            const btnGen = document.getElementById('btn-gen');
+            
             if (key === 'sphere') {
-                if (currentViewMode === 'net') toggleViewMode('solid'); 
                 btnNet.style.display = 'none';
-            } else {
+                btnGen.classList.remove('hidden');
+                btnGen.style.display = 'inline-block';
+            } 
+            else if (['cylinder', 'cone', 'frustum_circ'].includes(key)) {
                 btnNet.style.display = 'inline-block';
+                btnGen.classList.remove('hidden');
+                btnGen.style.display = 'inline-block';
+            }
+            else {
+                btnNet.style.display = 'inline-block';
+                btnGen.classList.add('hidden');
+                btnGen.style.display = 'none';
             }
 
             updateInfoPanel(geometryData[key]);
             
-            // Reset to solid view when changing shape for consistency
+            // FIX: Force immediate reset to solid view without animation delays when switching shapes
             currentViewMode = 'solid';
+            isGenAnimating = false;
+
+            // Update Mode Buttons
+            document.querySelectorAll('#view-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-solid').classList.add('active');
-            document.getElementById('btn-net').classList.remove('active');
-            moveCamera(CAM_POS_ISO);
-            
+
+            // Reset Controls
+            isAutoRotate = true;
+            document.getElementById('autoRotate').checked = true;
+
+            // Immediate Rebuild and Camera Reset
             rebuildScene('solid'); 
+            // Reset camera to ISO but look at CENTER height (1.5)
+            moveCamera(CAM_POS_ISO, LOOK_AT_CENTER);
         }
 
         function setPrismType(type) {
@@ -381,51 +421,61 @@
             document.querySelectorAll('#prism-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Rebuild in current mode
             if(currentViewMode === 'net') {
-                // If in net mode, rebuild closed then animate open instantly? 
-                // Better: rebuild closed, then animate open.
                 rebuildScene('net');
                 animateParts('open', 1000);
+            } else if (currentViewMode === 'gen') {
+                rebuildScene('solid');
             } else {
                 rebuildScene('solid');
             }
         }
 
         function toggleViewMode(mode) {
-            if (mode === currentViewMode) return;
             currentViewMode = mode;
+            isGenAnimating = (mode === 'gen');
 
-            // UI Toggle
             document.querySelectorAll('#view-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(mode === 'solid' ? 'btn-solid' : 'btn-net').classList.add('active');
+            if(mode === 'solid') document.getElementById('btn-solid').classList.add('active');
+            if(mode === 'net') document.getElementById('btn-net').classList.add('active');
+            if(mode === 'gen') document.getElementById('btn-gen').classList.add('active');
 
             if (mode === 'net') {
-                // 1. Switch to Net Geometry (built in Closed state)
                 rebuildScene('net');
-                // 2. Animate to Open State
                 animateParts('open', 2500);
-                // 3. Move Camera to Top View
-                moveCamera(CAM_POS_TOP);
-                // 4. Disable AutoRotate for better inspection
+                
+                let camPos, lookAt;
+                if (['cylinder', 'cone', 'frustum_circ'].includes(currentShapeKey)) {
+                    camPos = CAM_POS_NET_ROT;
+                    lookAt = new THREE.Vector3(0, 0, 4); 
+                } else {
+                    camPos = CAM_POS_NET_POLY;
+                    lookAt = new THREE.Vector3(0, 0, 0);
+                }
+                
+                moveCamera(camPos, lookAt);
+                isAutoRotate = false;
+                document.getElementById('autoRotate').checked = false;
+
+            } else if (mode === 'gen') {
+                genProgress = 0;
+                rebuildScene('gen');
+                moveCamera(CAM_POS_FRONT, new THREE.Vector3(0, 1.5, 0)); 
                 isAutoRotate = false;
                 document.getElementById('autoRotate').checked = false;
 
             } else {
-                // Solid Mode Requested
-                // 1. Animate back to Closed State (Fold)
-                animateParts('closed', 1500);
-                // 2. Move Camera back to Isometric
-                moveCamera(CAM_POS_ISO);
-                // 3. Enable AutoRotate (optional, good for "display")
+                // Solid Mode
+                if (activeGroup && activeGroup.userData.isNet) {
+                    animateParts('closed', 1500);
+                    setTimeout(() => { if(currentViewMode === 'solid') rebuildScene('solid'); }, 1600);
+                } else {
+                    rebuildScene('solid');
+                }
+                
+                moveCamera(CAM_POS_ISO, LOOK_AT_CENTER);
                 isAutoRotate = true;
                 document.getElementById('autoRotate').checked = true;
-
-                // 4. After animation, swap to true Solid Mesh for perfection (optional but cleaner)
-                // We use a timeout roughly matching the animation duration
-                setTimeout(() => {
-                    if(currentViewMode === 'solid') rebuildScene('solid');
-                }, 1600);
             }
         }
 
@@ -438,6 +488,7 @@
         function updateWireframeState() {
             if (activeGroup) {
                 activeGroup.traverse(child => {
+                    if (child.userData.isGenPlane || child.userData.isAxis) return;
                     if (child.isMesh && child.material) {
                         child.material.wireframe = isWireframe;
                         child.material.opacity = isWireframe ? 0.2 : 0.9;
@@ -484,8 +535,12 @@
             const mat = getCommonMaterial();
             const mode = modeOverride || currentViewMode;
 
-            // Important: "Net" mode builds the shape in its CLOSED (assembled) state initially,
-            // ready to be animated open.
+            if (mode === 'net') activeGroup.userData.isNet = true;
+
+            if (mode === 'gen') {
+                buildGenerationScene();
+                return;
+            }
             
             if (currentShapeKey === 'prism') buildPrism(mat, mode);
             else if (currentShapeKey === 'pyramid') buildPyramid(mat, mode);
@@ -497,41 +552,35 @@
         }
 
         // --- Camera Animation ---
-        function moveCamera(targetPos) {
+        function moveCamera(targetPos, lookAtPos) {
             new TWEEN.Tween(camera.position)
                 .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 2000)
                 .easing(TWEEN.Easing.Cubic.InOut)
                 .onUpdate(() => controls.update())
                 .start();
-                
-            // Also reset target to center
+            
+            const target = lookAtPos || new THREE.Vector3(0, 0, 0);
             new TWEEN.Tween(controls.target)
-                .to({ x: 0, y: 0, z: 0 }, 2000)
+                .to({ x: target.x, y: target.y, z: target.z }, 2000)
                 .easing(TWEEN.Easing.Cubic.InOut)
                 .start();
         }
 
-        // --- Part Animation System ---
+        // --- Part Animation System (Net) ---
         function animateParts(targetState, duration) {
-            // targetState: 'open' or 'closed'
             activeGroup.traverse(child => {
                 const data = child.userData;
-                
-                // Rotation Animation (Polyhedra)
                 if (data.isSide || data.isLid) {
                     const targetRot = targetState === 'open' ? data.openRot : data.closedRot;
-                    const mesh = data.isLid ? child : child.children[0]; // Lid is group, Side has mesh inside group
-                    
+                    const mesh = data.isLid ? child : child.children[0]; 
                     if (targetRot !== undefined && mesh) {
                         new TWEEN.Tween(mesh.rotation)
                             .to({ x: targetRot }, duration)
-                            .easing(targetState === 'open' ? TWEEN.Easing.Back.Out : TWEEN.Easing.Cubic.InOut) // Pop out, smooth in
-                            .delay(data.isLid && targetState === 'open' ? duration * 0.3 : 0) // Delay lid on open
+                            .easing(targetState === 'open' ? TWEEN.Easing.Back.Out : TWEEN.Easing.Cubic.InOut)
+                            .delay(data.isLid && targetState === 'open' ? duration * 0.3 : 0)
                             .start();
                     }
                 }
-                
-                // Position Animation (Rotation Bodies / Parts)
                 if (data.isPart) {
                     const targetPos = targetState === 'open' ? data.openPos : data.closedPos;
                     if (targetPos) {
@@ -544,8 +593,104 @@
             });
         }
 
-        // --- Geometry Builders ---
+        // --- Generation Animation System ---
+        function buildGenerationScene() {
+            const axisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 5, 0)]);
+            const axisMat = new THREE.LineDashedMaterial({ color: COLOR_AXIS, dashSize: 0.3, gapSize: 0.2 });
+            const axisLine = new THREE.Line(axisGeo, axisMat);
+            axisLine.computeLineDistances();
+            axisLine.userData.isAxis = true;
+            activeGroup.add(axisLine);
 
+            const bodyGroup = new THREE.Group();
+            bodyGroup.name = "genBodyGroup";
+            activeGroup.add(bodyGroup);
+
+            let genGeo;
+            if (currentShapeKey === 'cylinder') {
+                genGeo = new THREE.PlaneGeometry(1.5, 3);
+                genGeo.translate(0.75, 1.5, 0); 
+            } else if (currentShapeKey === 'cone') {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0); shape.lineTo(1.5, 0); shape.lineTo(0, 3.5); shape.lineTo(0, 0);
+                genGeo = new THREE.ShapeGeometry(shape);
+                genGeo.translate(0, 0, 0); 
+            } else if (currentShapeKey === 'frustum_circ') {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0); shape.lineTo(2, 0); shape.lineTo(1, 2.5); shape.lineTo(0, 2.5); shape.lineTo(0, 0);
+                genGeo = new THREE.ShapeGeometry(shape);
+            } else if (currentShapeKey === 'sphere') {
+                const shape = new THREE.Shape();
+                shape.absarc(0, 0, 2, -Math.PI/2, Math.PI/2, false);
+                shape.lineTo(0, -2); 
+                genGeo = new THREE.ShapeGeometry(shape);
+                genGeo.translate(0, 2, 0); 
+            }
+
+            const genMat = new THREE.MeshBasicMaterial({ color: COLOR_GEN_PLANE, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+            const genMesh = new THREE.Mesh(genGeo, genMat);
+            genMesh.name = "genPlane";
+            genMesh.userData.isGenPlane = true;
+
+            const edges = new THREE.EdgesGeometry(genGeo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+            genMesh.add(line);
+
+            activeGroup.add(genMesh);
+        }
+
+        function updateGenerationFrame() {
+            if (currentViewMode !== 'gen' || !activeGroup) return;
+
+            genProgress += genSpeed;
+            if (genProgress > 1.2) genProgress = 0; 
+            
+            const effectiveProgress = Math.min(genProgress, 1);
+            const angle = effectiveProgress * Math.PI * 2;
+
+            const plane = activeGroup.getObjectByName("genPlane");
+            if (plane) plane.rotation.y = -angle;
+
+            const bodyGroup = activeGroup.getObjectByName("genBodyGroup");
+            if (bodyGroup) {
+                if(bodyGroup.children.length > 0) {
+                    const old = bodyGroup.children[0];
+                    old.geometry.dispose();
+                    bodyGroup.remove(old);
+                }
+
+                if (effectiveProgress > 0.01) {
+                    let geo;
+                    const mat = getCommonMaterial();
+                    mat.side = THREE.DoubleSide; 
+
+                    if (currentShapeKey === 'cylinder') {
+                        geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32, 1, false, 0, angle);
+                        geo.translate(0, 1.5, 0);
+                    } else if (currentShapeKey === 'cone') {
+                        geo = new THREE.ConeGeometry(1.5, 3.5, 32, 1, false, 0, angle);
+                        geo.translate(0, 1.75, 0); 
+                    } else if (currentShapeKey === 'frustum_circ') {
+                        geo = new THREE.CylinderGeometry(1, 2, 2.5, 32, 1, false, 0, angle);
+                        geo.translate(0, 1.25, 0);
+                    } else if (currentShapeKey === 'sphere') {
+                        geo = new THREE.SphereGeometry(2, 32, 16, 0, angle);
+                        geo.translate(0, 2, 0);
+                    }
+
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.rotation.y = 0; 
+                    if (plane) plane.rotation.y = angle; 
+                    
+                    bodyGroup.add(mesh);
+                    addEdge(mesh, geo);
+                }
+            }
+        }
+
+
+        // --- Geometry Builders ---
+        
         // 1. Prism
         function buildPrism(material, mode) {
             const sides = 6;
@@ -553,7 +698,6 @@
             const height = 3;
             const sideWidth = 2 * radius * Math.sin(Math.PI / sides);
             
-            // Base
             const baseGeo = new THREE.CircleGeometry(radius, sides);
             const baseMesh = new THREE.Mesh(baseGeo, material);
             baseMesh.rotation.x = -Math.PI / 2;
@@ -572,12 +716,13 @@
                     geo = new THREE.CylinderGeometry(radius, radius, height, sides);
                 }
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = height / 2;
+                // Position so bottom is at 0
+                mesh.position.y = height / 2; 
+                baseMesh.position.y = 0;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
                 baseMesh.visible = false;
             } else {
-                // Net Mode (Built Closed)
                 const topGeo = new THREE.CircleGeometry(radius, sides);
                 const topMesh = new THREE.Mesh(topGeo, material);
                 topMesh.rotation.x = -Math.PI / 2;
@@ -608,16 +753,11 @@
 
                     const face = new THREE.Mesh(faceGeo, material);
                     addEdge(face, faceGeo);
-                    
-                    // Config for Animation
-                    // Closed: 0 (Vertical). Open: -PI/2 (Flat out)
                     pivotGroup.userData = { isSide: true, closedRot: 0, openRot: -Math.PI/2 };
-                    face.rotation.x = 0; // Start Closed
-
+                    face.rotation.x = 0; 
                     pivotGroup.add(face);
                     activeGroup.add(pivotGroup);
 
-                    // Attach Top Lid to index 0
                     if (i === 0) {
                         const topPivot = new THREE.Group();
                         if (currentPrismType === 'oblique') topPivot.position.set(0.75, height, 0);
@@ -626,15 +766,9 @@
                         topPivot.add(topMesh);
                         const distToCenter = radius * Math.cos(Math.PI/sides);
                         topMesh.position.set(0, 0, -distToCenter); 
-                        
                         face.add(topPivot);
-                        // Lid Anim: Closed: -PI/2 (Relative to side? No, side is vertical, lid is horiz. Relative rot is -PI/2).
-                        // Open: -PI/2 relative to side which is flat? 
-                        // Wait. Face is vertical (0). Lid is Horizontal (-PI/2). So ClosedRot = -PI/2.
-                        // When Face goes Flat (-PI/2), Lid follows. Lid needs to rotate FURTHER -PI/2 to be flat on ground?
-                        // If Face is -90, Lid is vertical down. Needs another -90 to be flat.
                         topPivot.userData = { isLid: true, closedRot: -Math.PI/2, openRot: -Math.PI };
-                        topPivot.rotation.x = -Math.PI/2; // Start Closed
+                        topPivot.rotation.x = -Math.PI/2;
                     }
                 }
             }
@@ -645,7 +779,6 @@
             const sideCount = 4;
             const radius = 2;
             const height = 3;
-            
             const baseGeo = new THREE.CircleGeometry(radius, sideCount, Math.PI/4);
             const baseMesh = new THREE.Mesh(baseGeo, material);
             baseMesh.rotation.x = -Math.PI / 2;
@@ -655,19 +788,18 @@
             if (mode === 'solid') {
                 const geo = new THREE.ConeGeometry(radius, height, sideCount);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = height/2;
+                mesh.position.y = height/2; // Bottom at 0
+                baseMesh.position.y = 0;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
                 baseMesh.visible = false;
             } else {
                 const sideWidth = radius * Math.sqrt(2);
                 const slantHeight = Math.sqrt((sideWidth/2)**2 + height**2);
-                
                 for (let i = 0; i < sideCount; i++) {
                     const pivotGroup = new THREE.Group();
                     const angle = i * (Math.PI/2);
                     const dist = sideWidth/2;
-                    
                     pivotGroup.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
                     pivotGroup.rotation.y = -angle - Math.PI/2;
 
@@ -678,13 +810,10 @@
                     shape.lineTo(-sideWidth/2, 0);
                     const faceGeo = new THREE.ShapeGeometry(shape);
                     const face = new THREE.Mesh(faceGeo, material);
-                    
-                    // Calc Closed Angle
-                    const angleFromVert = Math.atan2(sideWidth/2, height); // Tilt IN
+                    const angleFromVert = Math.atan2(sideWidth/2, height);
                     
                     pivotGroup.userData = { isSide: true, closedRot: angleFromVert, openRot: -Math.PI/2 };
-                    face.rotation.x = angleFromVert; // Start Closed
-
+                    face.rotation.x = angleFromVert; 
                     addEdge(face, faceGeo);
                     pivotGroup.add(face);
                     activeGroup.add(pivotGroup);
@@ -697,7 +826,7 @@
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.5;
+                mesh.position.y = 1.5; // Center at 1.5, Bottom at 0
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -705,16 +834,19 @@
             }
         }
 
-        // 4. Cone
+        // 4. Cone (MODIFIED DIMENSIONS)
         function buildCone(material, mode) {
+            const r = 1.5;
+            const h = 3.5;
+            
             if (mode === 'solid') {
-                const geo = new THREE.ConeGeometry(2, 3, 32);
+                const geo = new THREE.ConeGeometry(r, h, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.5;
+                mesh.position.y = h/2; // Bottom at 0
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
-                buildNetForRotation(2, 0, 3, 'sector');
+                buildNetForRotation(r, 0, h, 'sector');
             }
         }
 
@@ -728,7 +860,7 @@
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 4);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.25;
+                mesh.position.y = 1.25; // Bottom at 0
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -737,38 +869,28 @@
                 base.rotation.x = -Math.PI/2;
                 activeGroup.add(base);
                 addEdge(base, baseGeo);
-
                 const topGeo = new THREE.PlaneGeometry(sideW_top, sideW_top);
                 const top = new THREE.Mesh(topGeo, material);
                 top.rotation.x = -Math.PI/2;
-                
-                // Top animation: Closed at height h, Open at far position
                 const openZ = -sideW_bot/2 - sideW_top/2 - slantH - 0.5;
                 top.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, openZ) };
-                top.position.set(0, h, 0); // Start Closed
-                
+                top.position.set(0, h, 0); 
                 activeGroup.add(top);
                 addEdge(top, topGeo);
-
                 for(let i=0; i<4; i++) {
                      const pivotGroup = new THREE.Group();
                      const angle = i * Math.PI/2;
                      const dist = sideW_bot/2;
                      pivotGroup.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
                      pivotGroup.rotation.y = -angle - Math.PI/2;
-                     
                      const shape = new THREE.Shape();
-                     shape.moveTo(-sideW_bot/2, 0);
-                     shape.lineTo(sideW_bot/2, 0);
-                     shape.lineTo(sideW_top/2, slantH);
-                     shape.lineTo(-sideW_top/2, slantH);
+                     shape.moveTo(-sideW_bot/2, 0); shape.lineTo(sideW_bot/2, 0);
+                     shape.lineTo(sideW_top/2, slantH); shape.lineTo(-sideW_top/2, slantH);
                      const trapGeo = new THREE.ShapeGeometry(shape);
                      const mesh = new THREE.Mesh(trapGeo, material);
-                     
                      const angleFromVert = Math.atan2((sideW_bot - sideW_top)/2, h);
                      pivotGroup.userData = { isSide: true, closedRot: angleFromVert, openRot: -Math.PI/2 };
-                     mesh.rotation.x = angleFromVert; // Start Closed
-
+                     mesh.rotation.x = angleFromVert; 
                      pivotGroup.add(mesh);
                      activeGroup.add(pivotGroup);
                      addEdge(mesh, trapGeo);
@@ -781,7 +903,7 @@
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.25;
+                mesh.position.y = 1.25; // Bottom at 0
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -790,49 +912,46 @@
         }
 
         // 7. Sphere
-        function buildSphere(material) {
+        function buildSphere(material, mode) {
              const geo = new THREE.SphereGeometry(2, 32, 32);
              const mesh = new THREE.Mesh(geo, material);
-             mesh.position.y = 2;
+             mesh.position.y = 2; // Center at 2, Bottom at 0
              activeGroup.add(mesh);
              addEdge(mesh, geo);
         }
 
-        // Helper for Nets of Rotation Bodies (Decomposition)
         function buildNetForRotation(rBottom, rTop, h, type) {
             const group = new THREE.Group();
-            
-            // Bottom Circle (Static)
             const c1 = new THREE.Mesh(new THREE.CircleGeometry(rBottom, 64), getCommonMaterial());
             c1.rotation.x = -Math.PI/2;
             group.add(c1);
             addEdge(c1, c1.geometry);
 
-            let latGeo;
-            let latMesh;
+            let latGeo, latMesh;
             let R_outer = 0, R_inner = 0;
             
             if (type === 'rect') {
-                // Cylinder
                 const w = 2 * Math.PI * rBottom;
                 latGeo = new THREE.PlaneGeometry(w, h);
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
                 
-                const finalZ = rBottom + h/2 + 0.5;
-                latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, finalZ) };
-                latMesh.position.set(0, h/2, 0); // Start Closed
+                const padding = 0.5;
+                const rectStartZ = rBottom + padding;
+                const rectCenterZ = rectStartZ + h/2; 
                 
+                // Closed Pos matches solid mesh center Y = h/2 (which is 1.5)
+                latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, rectCenterZ) };
+                latMesh.position.set(0, h/2, 0); 
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
                 
-                // Top Circle
                 const c2 = new THREE.Mesh(new THREE.CircleGeometry(rBottom, 64), getCommonMaterial());
                 c2.rotation.x = -Math.PI/2;
-                const c2Z = finalZ + h/2 + rBottom + 0.5;
-                c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, c2Z) };
-                c2.position.set(0, h, 0); // Start Closed
                 
+                const topCircleZ = rectStartZ + h + padding + rBottom;
+                c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, topCircleZ) };
+                c2.position.set(0, h, 0); 
                 group.add(c2);
                 addEdge(c2, c2.geometry);
 
@@ -840,39 +959,41 @@
                 const l = Math.sqrt((rBottom - rTop)**2 + h**2);
                 const circum = 2 * Math.PI * rBottom;
                 const theta = circum / l; 
-                
                 const shape = new THREE.Shape();
-                shape.moveTo(0, 0);
                 
                 R_outer = rTop === 0 ? l : l * rBottom / (rBottom - rTop);
                 R_inner = rTop === 0 ? 0 : R_outer - l;
                 
                 if (type === 'annulus') {
-                    shape.absarc(0, 0, R_inner, -theta/2 + Math.PI/2, theta/2 + Math.PI/2, false);
-                    shape.absarc(0, 0, R_outer, theta/2 + Math.PI/2, -theta/2 + Math.PI/2, true);
+                    // Center angles on -PI/2 (South in 2D) so when rotated X-90 it points +Z
+                    shape.absarc(0, 0, R_inner, -theta/2 - Math.PI/2, theta/2 - Math.PI/2, false);
+                    shape.absarc(0, 0, R_outer, theta/2 - Math.PI/2, -theta/2 - Math.PI/2, true);
                     shape.closePath();
                 } else {
                     shape.moveTo(0, 0);
-                    shape.arc(0, 0, R_outer, -theta/2 + Math.PI/2, theta/2 + Math.PI/2, false);
-                    shape.closePath();
+                    shape.absarc(0, 0, R_outer, theta/2 - Math.PI/2, -theta/2 - Math.PI/2, true);
+                    shape.lineTo(0, 0); 
                 }
-                
                 latGeo = new THREE.ShapeGeometry(shape);
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
                 
-                const finalZ = rBottom + R_inner + (R_outer-R_inner)/2 + 0.5;
+                const padding = 0.5;
+                const visualStartOffset = R_inner;
+                const finalZ = rBottom + padding - visualStartOffset;
+
+                // For cone/frustum, solid mesh is vertically centered at h/2 (e.g. 1.75 for cone)
                 latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, finalZ) };
                 latMesh.position.set(0, h/2, 0);
-
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
 
                 if (rTop > 0) {
                     const c2 = new THREE.Mesh(new THREE.CircleGeometry(rTop, 32), getCommonMaterial());
                     c2.rotation.x = -Math.PI/2;
-                    const c2Z = finalZ + (R_outer-R_inner)/2 + rTop + 0.5;
-                    c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, c2Z) };
+                    const topCircleZ = finalZ + R_outer + padding + rTop;
+                    
+                    c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, topCircleZ) };
                     c2.position.set(0, h, 0);
                     group.add(c2);
                     addEdge(c2, c2.geometry);
@@ -892,35 +1013,41 @@
             requestAnimationFrame(animate);
             TWEEN.update();
             controls.update();
+            
+            // Auto Rotate logic
             if (isAutoRotate && activeGroup) activeGroup.rotation.y += 0.005;
+
+            // Generation Animation Loop
+            if (isGenAnimating) updateGenerationFrame();
+
             renderer.render(scene, camera);
         }
 
-        // --- Helper: UI Update ---
+        // --- Helper: UI Update (LARGER FONTS) ---
         function updateInfoPanel(data) {
             document.getElementById('shape-title').innerText = data.title;
             
             let html = `
-                <div class="mb-4">
-                    <h3 class="text-blue-300 font-semibold mb-1">定义</h3>
-                    <p class="text-sm text-gray-300 leading-relaxed border-l-2 border-blue-500 pl-2">${data.definition}</p>
+                <div class="mb-6">
+                    <h3 class="text-blue-300 font-bold text-xl mb-2">定义</h3>
+                    <p class="text-xl text-gray-300 leading-loose border-l-4 border-blue-500 pl-3">${data.definition}</p>
                 </div>
-                <div class="mb-4">
-                    <h3 class="text-blue-300 font-semibold mb-1">结构特征</h3>
-                    <ul class="list-disc list-inside text-sm text-gray-300 space-y-1">
+                <div class="mb-6">
+                    <h3 class="text-blue-300 font-bold text-xl mb-2">结构特征</h3>
+                    <ul class="list-disc list-inside text-xl text-gray-300 space-y-2 leading-relaxed">
                         ${data.features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-blue-300 font-semibold mb-1">公式</h3>
-                    <div class="bg-slate-800 bg-opacity-60 p-3 rounded border border-slate-700">
+                    <h3 class="text-blue-300 font-bold text-xl mb-2">公式</h3>
+                    <div class="bg-slate-800 bg-opacity-80 p-5 rounded-lg border border-slate-700">
             `;
 
             for (const [key, val] of Object.entries(data.formulas)) {
                 if (key === 'note') {
-                    html += `<p class="text-xs text-gray-400 mt-2 italic border-t border-gray-600 pt-1">${val}</p>`;
+                    html += `<p class="text-lg text-gray-400 mt-3 italic border-t border-gray-600 pt-2">${val}</p>`;
                 } else {
-                    html += `<div class="math-display">$$${val}$$</div>`;
+                    html += `<div class="math-display text-2xl">$$${val}$$</div>`;
                 }
             }
 
