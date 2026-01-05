@@ -32,7 +32,7 @@
         
         /* Glassmorphism UI Panels */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.9); /* Slightly more opaque for readability */
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #e2e8f0;
@@ -115,6 +115,7 @@
         <!-- Prism Type Controls -->
         <div id="prism-controls" class="glass-panel rounded-lg p-2 flex gap-3 hidden">
             <button class="mode-btn active" onclick="setPrismType('right')">直棱柱</button>
+            <button class="mode-btn" onclick="setPrismType('regular')">正棱柱</button>
             <button class="mode-btn" onclick="setPrismType('oblique')">斜棱柱</button>
         </div>
 
@@ -172,16 +173,16 @@
     </div>
 
     <script>
-        // --- Geometry Data & Educational Content ---
+        // --- Geometry Data ---
         const geometryData = {
             prism: {
                 title: "棱柱 (Prism)",
                 definition: "有两个面互相平行，其余各面都是四边形，并且每相邻两个四边形的公共边都互相平行。",
                 features: [
-                    "<strong>直棱柱：</strong>侧棱垂直于底面的棱柱。",
-                    "<strong>斜棱柱：</strong>侧棱不垂直于底面的棱柱。",
+                    "<strong>直棱柱：</strong>侧棱垂直于底面的棱柱。底面可是任意多边形。",
                     "<strong>正棱柱：</strong>底面是正多边形的直棱柱。",
-                    "<strong>展开图：</strong>由两个底面多边形和侧面矩形（或平行四边形）组成。"
+                    "<strong>斜棱柱：</strong>侧棱不垂直于底面的棱柱。",
+                    "<strong>四棱柱：</strong>底面是四边形的棱柱（如长方体、立方体）。"
                 ],
                 formulas: {
                     area: "S_{表面} = S_{侧} + 2S_{底}",
@@ -280,17 +281,17 @@
         // --- Global State ---
         let scene, camera, renderer, controls;
         let currentShapeKey = 'prism';
-        let currentPrismType = 'right'; // 'right' or 'oblique'
-        let currentViewMode = 'solid'; // 'solid', 'net', 'gen'
+        let currentPrismType = 'right'; 
+        let currentViewMode = 'solid'; 
         
-        let activeGroup = null; // Container for the current shape parts
-        let unfoldTweens = []; // Array of tween objects
+        let activeGroup = null; 
+        let unfoldTweens = []; 
 
         let isWireframe = false;
         let isAutoRotate = true;
 
         // Generation Animation State
-        let genProgress = 0; // 0 to 1
+        let genProgress = 0; 
         let isGenAnimating = false;
         let genSpeed = 0.01;
 
@@ -298,7 +299,7 @@
         const COLOR_FACE = 0x3b82f6;
         const COLOR_FACE_INNER = 0x2563eb;
         const COLOR_EDGE = 0x93c5fd;
-        const COLOR_GEN_PLANE = 0xfacc15; // Yellow for generating plane
+        const COLOR_GEN_PLANE = 0xfacc15; 
         const COLOR_AXIS = 0xffffff;
 
         // Camera presets
@@ -307,7 +308,6 @@
         const CAM_POS_NET_ROT = new THREE.Vector3(0, 25, 4); 
         const CAM_POS_NET_POLY = new THREE.Vector3(0, 20, 0);
         
-        // VISUAL CENTER TARGET: Look slightly up so models sitting on y=0 are centered
         const LOOK_AT_CENTER = new THREE.Vector3(0, 1.5, 0);
 
         function init() {
@@ -332,7 +332,7 @@
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.target.copy(LOOK_AT_CENTER); // Initialize looking at center height
+            controls.target.copy(LOOK_AT_CENTER);
 
             // Lights
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -341,9 +341,9 @@
             dirLight.castShadow = true;
             scene.add(dirLight);
             
-            // Grid - Slightly lowered to avoid z-fighting with mesh bottom
+            // Grid - Lowered to prevent Z-fighting
             const gridHelper = new THREE.GridHelper(20, 20, 0x1e293b, 0x1e293b);
-            gridHelper.position.y = -0.01;
+            gridHelper.position.y = -0.05; 
             scene.add(gridHelper);
 
             // Initial Load
@@ -398,21 +398,15 @@
 
             updateInfoPanel(geometryData[key]);
             
-            // FIX: Force immediate reset to solid view without animation delays when switching shapes
+            // Force reset to solid view
             currentViewMode = 'solid';
             isGenAnimating = false;
-
-            // Update Mode Buttons
             document.querySelectorAll('#view-controls .mode-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-solid').classList.add('active');
-
-            // Reset Controls
             isAutoRotate = true;
             document.getElementById('autoRotate').checked = true;
 
-            // Immediate Rebuild and Camera Reset
             rebuildScene('solid'); 
-            // Reset camera to ISO but look at CENTER height (1.5)
             moveCamera(CAM_POS_ISO, LOOK_AT_CENTER);
         }
 
@@ -465,14 +459,12 @@
                 document.getElementById('autoRotate').checked = false;
 
             } else {
-                // Solid Mode
                 if (activeGroup && activeGroup.userData.isNet) {
                     animateParts('closed', 1500);
                     setTimeout(() => { if(currentViewMode === 'solid') rebuildScene('solid'); }, 1600);
                 } else {
                     rebuildScene('solid');
                 }
-                
                 moveCamera(CAM_POS_ISO, LOOK_AT_CENTER);
                 isAutoRotate = true;
                 document.getElementById('autoRotate').checked = true;
@@ -496,8 +488,6 @@
                 });
             }
         }
-
-        // --- 3D Scene Management ---
 
         function clearScene() {
             if (activeGroup) {
@@ -523,7 +513,10 @@
                 transparent: true,
                 opacity: 0.9,
                 side: THREE.DoubleSide,
-                wireframe: isWireframe
+                wireframe: isWireframe,
+                polygonOffset: true,
+                polygonOffsetFactor: 1, 
+                polygonOffsetUnits: 1
             });
         }
 
@@ -566,7 +559,7 @@
                 .start();
         }
 
-        // --- Part Animation System (Net) ---
+        // --- Part Animation System ---
         function animateParts(targetState, duration) {
             activeGroup.traverse(child => {
                 const data = child.userData;
@@ -593,7 +586,7 @@
             });
         }
 
-        // --- Generation Animation System ---
+        // --- Generation Animation ---
         function buildGenerationScene() {
             const axisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 5, 0)]);
             const axisMat = new THREE.LineDashedMaterial({ color: COLOR_AXIS, dashSize: 0.3, gapSize: 0.2 });
@@ -614,7 +607,6 @@
                 const shape = new THREE.Shape();
                 shape.moveTo(0, 0); shape.lineTo(1.5, 0); shape.lineTo(0, 3.5); shape.lineTo(0, 0);
                 genGeo = new THREE.ShapeGeometry(shape);
-                genGeo.translate(0, 0, 0); 
             } else if (currentShapeKey === 'frustum_circ') {
                 const shape = new THREE.Shape();
                 shape.moveTo(0, 0); shape.lineTo(2, 0); shape.lineTo(1, 2.5); shape.lineTo(0, 2.5); shape.lineTo(0, 0);
@@ -631,7 +623,7 @@
             const genMesh = new THREE.Mesh(genGeo, genMat);
             genMesh.name = "genPlane";
             genMesh.userData.isGenPlane = true;
-
+            
             const edges = new THREE.EdgesGeometry(genGeo);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
             genMesh.add(line);
@@ -641,144 +633,195 @@
 
         function updateGenerationFrame() {
             if (currentViewMode !== 'gen' || !activeGroup) return;
-
             genProgress += genSpeed;
             if (genProgress > 1.2) genProgress = 0; 
-            
             const effectiveProgress = Math.min(genProgress, 1);
             const angle = effectiveProgress * Math.PI * 2;
-
             const plane = activeGroup.getObjectByName("genPlane");
             if (plane) plane.rotation.y = -angle;
-
             const bodyGroup = activeGroup.getObjectByName("genBodyGroup");
-            if (bodyGroup) {
+            if (bodyGroup && effectiveProgress > 0.01) {
                 if(bodyGroup.children.length > 0) {
                     const old = bodyGroup.children[0];
                     old.geometry.dispose();
                     bodyGroup.remove(old);
                 }
-
-                if (effectiveProgress > 0.01) {
-                    let geo;
-                    const mat = getCommonMaterial();
-                    mat.side = THREE.DoubleSide; 
-
-                    if (currentShapeKey === 'cylinder') {
-                        geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32, 1, false, 0, angle);
-                        geo.translate(0, 1.5, 0);
-                    } else if (currentShapeKey === 'cone') {
-                        geo = new THREE.ConeGeometry(1.5, 3.5, 32, 1, false, 0, angle);
-                        geo.translate(0, 1.75, 0); 
-                    } else if (currentShapeKey === 'frustum_circ') {
-                        geo = new THREE.CylinderGeometry(1, 2, 2.5, 32, 1, false, 0, angle);
-                        geo.translate(0, 1.25, 0);
-                    } else if (currentShapeKey === 'sphere') {
-                        geo = new THREE.SphereGeometry(2, 32, 16, 0, angle);
-                        geo.translate(0, 2, 0);
-                    }
-
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.rotation.y = 0; 
-                    if (plane) plane.rotation.y = angle; 
-                    
-                    bodyGroup.add(mesh);
-                    addEdge(mesh, geo);
+                let geo;
+                const mat = getCommonMaterial();
+                mat.side = THREE.DoubleSide; 
+                if (currentShapeKey === 'cylinder') {
+                    geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32, 1, false, 0, angle);
+                    geo.translate(0, 1.5, 0);
+                } else if (currentShapeKey === 'cone') {
+                    geo = new THREE.ConeGeometry(1.5, 3.5, 32, 1, false, 0, angle);
+                    geo.translate(0, 1.75, 0); 
+                } else if (currentShapeKey === 'frustum_circ') {
+                    geo = new THREE.CylinderGeometry(1, 2, 2.5, 32, 1, false, 0, angle);
+                    geo.translate(0, 1.25, 0);
+                } else if (currentShapeKey === 'sphere') {
+                    geo = new THREE.SphereGeometry(2, 32, 16, 0, angle);
+                    geo.translate(0, 2, 0);
                 }
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.rotation.y = 0; 
+                if (plane) plane.rotation.y = angle; 
+                bodyGroup.add(mesh);
+                addEdge(mesh, geo);
             }
         }
 
-
         // --- Geometry Builders ---
-        
-        // 1. Prism
         function buildPrism(material, mode) {
-            const sides = 6;
-            const radius = 1.5;
-            const height = 3;
-            const sideWidth = 2 * radius * Math.sin(Math.PI / sides);
-            
-            const baseGeo = new THREE.CircleGeometry(radius, sides);
-            const baseMesh = new THREE.Mesh(baseGeo, material);
-            baseMesh.rotation.x = -Math.PI / 2;
-            activeGroup.add(baseMesh);
-            addEdge(baseMesh, baseGeo);
+            let w, d, h;
+            if (currentPrismType === 'regular') {
+                w = 1.8; d = 1.8; h = 3; 
+            } else if (currentPrismType === 'right' || currentPrismType === 'oblique') {
+                w = 2.2; d = 1.4; h = 3; 
+            } else {
+                w = 2; d = 1.5; h = 3; 
+            }
 
             if (mode === 'solid') {
-                let geo;
+                let geo = new THREE.BoxGeometry(w, h, d);
+                geo.translate(0, h/2, 0);
+
                 if (currentPrismType === 'oblique') {
-                    geo = new THREE.CylinderGeometry(radius, radius, height, sides);
                     const shearM = new THREE.Matrix4().makeShear(0.5, 0, 0, 0, 0, 0);
-                    geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, height/2, 0));
                     geo.applyMatrix4(shearM);
-                    geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -height/2, 0));
-                } else {
-                    geo = new THREE.CylinderGeometry(radius, radius, height, sides);
                 }
+
                 const mesh = new THREE.Mesh(geo, material);
-                // Position so bottom is at 0
-                mesh.position.y = height / 2; 
-                baseMesh.position.y = 0;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
-                baseMesh.visible = false;
-            } else {
-                const topGeo = new THREE.CircleGeometry(radius, sides);
-                const topMesh = new THREE.Mesh(topGeo, material);
-                topMesh.rotation.x = -Math.PI / 2;
-                
-                for (let i = 0; i < sides; i++) {
-                    const angle = (i / sides) * Math.PI * 2;
+            } 
+            else {
+                // NET MODE
+                const baseGeo = new THREE.PlaneGeometry(w, d);
+                baseGeo.rotateX(-Math.PI / 2); 
+                const baseMesh = new THREE.Mesh(baseGeo, material);
+                activeGroup.add(baseMesh);
+                addEdge(baseMesh, baseGeo);
+
+                const faces = [
+                    { type: 'FB', w: w, h: h, x: 0, z: d/2, ry: 0 },      
+                    { type: 'FB', w: w, h: h, x: 0, z: -d/2, ry: Math.PI }, 
+                    { type: 'LR', w: d, h: h, x: -w/2, z: 0, ry: -Math.PI/2 }, 
+                    { type: 'LR', w: d, h: h, x: w/2, z: 0, ry: Math.PI/2 }   
+                ];
+
+                const shearX = (currentPrismType === 'oblique') ? 0.5 * h : 0;
+                // Calculate actual slant height for LR faces
+                const slantHeight = Math.sqrt(h*h + shearX*shearX);
+                // Calculate tilt angle for LR faces (from vertical 0)
+                // When solid leans +X, the left/right faces tilt "back" if viewed from Z?
+                // Left face (at -w/2) is perpendicular to X. X shifts. It tilts.
+                // The tilt angle around Z-axis (local X) is atan(shearX/h).
+                // Let's deduce sign: Solid moves +X at top. 
+                // Left Face: Base at X=-w/2. Top at X=-w/2+sh.
+                // Rotated -90 around Y. Local X is World Z. Local Y is World Y. Local Z is World X.
+                // Face plane is Normal to Local Z.
+                // Solid shear moves vertices in Local Z (World X).
+                // So this face tilts around Local X (World Z)? No.
+                // The face bottom is at (x,0,z). Top at (x+sh, h, z).
+                // In local frame (where base edge is X-axis), height is Y.
+                // The shift is PERPENDICULAR to the face plane?
+                // Left Face: Plane X=-w/2. Shear is along X.
+                // So the top edge moves OUT of the original plane.
+                // This means the face tilts.
+                // The closed angle is Math.atan2(shearX, h).
+                const tiltAngle = Math.atan2(shearX, h);
+
+                faces.forEach((f, i) => {
                     const pivotGroup = new THREE.Group();
-                    
-                    const x = Math.cos(angle + Math.PI/sides) * (radius * Math.cos(Math.PI/sides));
-                    const z = Math.sin(angle + Math.PI/sides) * (radius * Math.cos(Math.PI/sides));
-                    
-                    pivotGroup.position.set(x, 0, z);
-                    pivotGroup.rotation.y = -angle - Math.PI/sides;
-                    
+                    pivotGroup.position.set(f.x, 0, f.z);
+                    pivotGroup.rotation.y = f.ry;
+
                     let faceGeo;
+                    let closedRot = 0;
+
                     if (currentPrismType === 'oblique') {
-                        const shape = new THREE.Shape();
-                        shape.moveTo(-sideWidth/2, 0);
-                        shape.lineTo(sideWidth/2, 0);
-                        shape.lineTo(sideWidth/2 + 0.75, height);
-                        shape.lineTo(-sideWidth/2 + 0.75, height);
-                        shape.lineTo(-sideWidth/2, 0);
-                        faceGeo = new THREE.ShapeGeometry(shape);
+                        if (f.type === 'FB') {
+                            // Front/Back faces are sheared in their own plane -> Parallelogram
+                            const shape = new THREE.Shape();
+                            shape.moveTo(-f.w/2, 0);
+                            shape.lineTo(f.w/2, 0);
+                            shape.lineTo(f.w/2 + shearX, h);
+                            shape.lineTo(-f.w/2 + shearX, h);
+                            shape.lineTo(-f.w/2, 0);
+                            faceGeo = new THREE.ShapeGeometry(shape);
+                            // They remain vertical
+                            closedRot = 0;
+                        } else {
+                            // Left/Right faces are rectangles but tilted
+                            // Height becomes slantHeight
+                            faceGeo = new THREE.PlaneGeometry(f.w, slantHeight);
+                            faceGeo.translate(0, slantHeight/2, 0);
+                            // Determine tilt direction.
+                            // Left Face (ry = -PI/2): Local Z is World X.
+                            // Top moves +X (Local +Z).
+                            // Rotation around Local X (Base edge).
+                            // Positive rotation X moves top to -Z (Local) -> -WorldX? No.
+                            // Right Hand Rule: Thumb on X. Fingers curl Y -> Z.
+                            // +RotX moves Y axis towards Z axis.
+                            // So +RotX moves top towards Local +Z (World +X).
+                            // So Left Face needs +tiltAngle.
+                            // Right Face (ry = PI/2): Local Z is World -X.
+                            // Top moves +X (Local -Z).
+                            // +RotX moves top towards Local +Z (World -X).
+                            // -RotX moves top towards Local -Z (World +X).
+                            // So Right Face needs -tiltAngle.
+                            if (f.ry === -Math.PI/2) closedRot = tiltAngle;
+                            else closedRot = -tiltAngle;
+                        }
                     } else {
-                        faceGeo = new THREE.PlaneGeometry(sideWidth, height);
-                        faceGeo.translate(0, height/2, 0);
+                        faceGeo = new THREE.PlaneGeometry(f.w, h);
+                        faceGeo.translate(0, h/2, 0);
+                        closedRot = 0;
                     }
 
                     const face = new THREE.Mesh(faceGeo, material);
                     addEdge(face, faceGeo);
-                    pivotGroup.userData = { isSide: true, closedRot: 0, openRot: -Math.PI/2 };
-                    face.rotation.x = 0; 
+                    
+                    pivotGroup.userData = { isSide: true, closedRot: closedRot, openRot: -Math.PI/2 };
+                    face.rotation.x = closedRot; 
+
                     pivotGroup.add(face);
                     activeGroup.add(pivotGroup);
 
-                    if (i === 0) {
+                    // Attach Top Lid to Back Face (index 1)
+                    if (i === 1) { 
                         const topPivot = new THREE.Group();
-                        if (currentPrismType === 'oblique') topPivot.position.set(0.75, height, 0);
-                        else topPivot.position.set(0, height, 0);
+                        // Position at top of the face (shifted if oblique)
+                        topPivot.position.set(shearX, h, 0);
+                        
+                        const topGeo = new THREE.PlaneGeometry(w, d);
+                        topGeo.translate(0, d/2, 0); 
+                        
+                        const topMesh = new THREE.Mesh(topGeo, material);
                         
                         topPivot.add(topMesh);
-                        const distToCenter = radius * Math.cos(Math.PI/sides);
-                        topMesh.position.set(0, 0, -distToCenter); 
                         face.add(topPivot);
-                        topPivot.userData = { isLid: true, closedRot: -Math.PI/2, openRot: -Math.PI };
-                        topPivot.rotation.x = -Math.PI/2;
+                        
+                        // Lid Anim: Closed is relative to side.
+                        // Side is Vertical (0). Lid is Horizontal (-90).
+                        // Open is -PI/2? No.
+                        // If side is flat (-90), lid should be flat on ground.
+                        // Lid attached to top of side.
+                        // Side flat: Top is at Z = -h.
+                        // Lid needs to extend further Z.
+                        // Side is at -90. Lid needs to be collinear (0 deg relative to side).
+                        // So openRot = 0.
+                        topPivot.userData = { isLid: true, closedRot: -Math.PI/2, openRot: 0 };
+                        topPivot.rotation.x = -Math.PI/2; 
+                        
+                        addEdge(topMesh, topGeo);
                     }
-                }
+                });
             }
         }
 
-        // 2. Pyramid
         function buildPyramid(material, mode) {
-            const sideCount = 4;
-            const radius = 2;
-            const height = 3;
+            const sideCount = 4; const radius = 2; const height = 3;
             const baseGeo = new THREE.CircleGeometry(radius, sideCount, Math.PI/4);
             const baseMesh = new THREE.Mesh(baseGeo, material);
             baseMesh.rotation.x = -Math.PI / 2;
@@ -788,7 +831,7 @@
             if (mode === 'solid') {
                 const geo = new THREE.ConeGeometry(radius, height, sideCount);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = height/2; // Bottom at 0
+                mesh.position.y = height/2; 
                 baseMesh.position.y = 0;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
@@ -802,16 +845,12 @@
                     const dist = sideWidth/2;
                     pivotGroup.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
                     pivotGroup.rotation.y = -angle - Math.PI/2;
-
                     const shape = new THREE.Shape();
-                    shape.moveTo(-sideWidth/2, 0);
-                    shape.lineTo(sideWidth/2, 0);
-                    shape.lineTo(0, slantHeight);
-                    shape.lineTo(-sideWidth/2, 0);
+                    shape.moveTo(-sideWidth/2, 0); shape.lineTo(sideWidth/2, 0);
+                    shape.lineTo(0, slantHeight); shape.lineTo(-sideWidth/2, 0);
                     const faceGeo = new THREE.ShapeGeometry(shape);
                     const face = new THREE.Mesh(faceGeo, material);
                     const angleFromVert = Math.atan2(sideWidth/2, height);
-                    
                     pivotGroup.userData = { isSide: true, closedRot: angleFromVert, openRot: -Math.PI/2 };
                     face.rotation.x = angleFromVert; 
                     addEdge(face, faceGeo);
@@ -821,12 +860,11 @@
             }
         }
 
-        // 3. Cylinder
         function buildCylinder(material, mode) {
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1.5, 1.5, 3, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.5; // Center at 1.5, Bottom at 0
+                mesh.position.y = 1.5; 
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -834,15 +872,12 @@
             }
         }
 
-        // 4. Cone (MODIFIED DIMENSIONS)
         function buildCone(material, mode) {
-            const r = 1.5;
-            const h = 3.5;
-            
+            const r = 1.5; const h = 3.5;
             if (mode === 'solid') {
                 const geo = new THREE.ConeGeometry(r, h, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = h/2; // Bottom at 0
+                mesh.position.y = h/2;
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -850,17 +885,15 @@
             }
         }
 
-        // 5. PolyFrustum
         function buildPolyFrustum(material, mode) {
              const bottomR = 2; const topR = 1; const h = 2.5;
              const sideW_bot = bottomR * Math.sqrt(2);
              const sideW_top = topR * Math.sqrt(2);
              const slantH = Math.sqrt(((sideW_bot - sideW_top)/2)**2 + h**2);
-
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 4);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.25; // Bottom at 0
+                mesh.position.y = 1.25; 
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -898,12 +931,11 @@
             }
         }
 
-        // 6. CircFrustum
         function buildCircFrustum(material, mode) {
             if (mode === 'solid') {
                 const geo = new THREE.CylinderGeometry(1, 2, 2.5, 32);
                 const mesh = new THREE.Mesh(geo, material);
-                mesh.position.y = 1.25; // Bottom at 0
+                mesh.position.y = 1.25; 
                 activeGroup.add(mesh);
                 addEdge(mesh, geo);
             } else {
@@ -911,11 +943,10 @@
             }
         }
 
-        // 7. Sphere
         function buildSphere(material, mode) {
              const geo = new THREE.SphereGeometry(2, 32, 32);
              const mesh = new THREE.Mesh(geo, material);
-             mesh.position.y = 2; // Center at 2, Bottom at 0
+             mesh.position.y = 2; 
              activeGroup.add(mesh);
              addEdge(mesh, geo);
         }
@@ -926,46 +957,35 @@
             c1.rotation.x = -Math.PI/2;
             group.add(c1);
             addEdge(c1, c1.geometry);
-
             let latGeo, latMesh;
             let R_outer = 0, R_inner = 0;
-            
             if (type === 'rect') {
                 const w = 2 * Math.PI * rBottom;
                 latGeo = new THREE.PlaneGeometry(w, h);
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
-                
                 const padding = 0.5;
                 const rectStartZ = rBottom + padding;
                 const rectCenterZ = rectStartZ + h/2; 
-                
-                // Closed Pos matches solid mesh center Y = h/2 (which is 1.5)
                 latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, rectCenterZ) };
                 latMesh.position.set(0, h/2, 0); 
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
-                
                 const c2 = new THREE.Mesh(new THREE.CircleGeometry(rBottom, 64), getCommonMaterial());
                 c2.rotation.x = -Math.PI/2;
-                
                 const topCircleZ = rectStartZ + h + padding + rBottom;
                 c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, topCircleZ) };
                 c2.position.set(0, h, 0); 
                 group.add(c2);
                 addEdge(c2, c2.geometry);
-
             } else if (type === 'sector' || type === 'annulus') {
                 const l = Math.sqrt((rBottom - rTop)**2 + h**2);
                 const circum = 2 * Math.PI * rBottom;
                 const theta = circum / l; 
                 const shape = new THREE.Shape();
-                
                 R_outer = rTop === 0 ? l : l * rBottom / (rBottom - rTop);
                 R_inner = rTop === 0 ? 0 : R_outer - l;
-                
                 if (type === 'annulus') {
-                    // Center angles on -PI/2 (South in 2D) so when rotated X-90 it points +Z
                     shape.absarc(0, 0, R_inner, -theta/2 - Math.PI/2, theta/2 - Math.PI/2, false);
                     shape.absarc(0, 0, R_outer, theta/2 - Math.PI/2, -theta/2 - Math.PI/2, true);
                     shape.closePath();
@@ -977,22 +997,17 @@
                 latGeo = new THREE.ShapeGeometry(shape);
                 latMesh = new THREE.Mesh(latGeo, getCommonMaterial());
                 latMesh.rotation.x = -Math.PI/2;
-                
                 const padding = 0.5;
                 const visualStartOffset = R_inner;
                 const finalZ = rBottom + padding - visualStartOffset;
-
-                // For cone/frustum, solid mesh is vertically centered at h/2 (e.g. 1.75 for cone)
                 latMesh.userData = { isPart: true, closedPos: new THREE.Vector3(0, h/2, 0), openPos: new THREE.Vector3(0, 0, finalZ) };
                 latMesh.position.set(0, h/2, 0);
                 group.add(latMesh);
                 addEdge(latMesh, latGeo);
-
                 if (rTop > 0) {
                     const c2 = new THREE.Mesh(new THREE.CircleGeometry(rTop, 32), getCommonMaterial());
                     c2.rotation.x = -Math.PI/2;
                     const topCircleZ = finalZ + R_outer + padding + rTop;
-                    
                     c2.userData = { isPart: true, closedPos: new THREE.Vector3(0, h, 0), openPos: new THREE.Vector3(0, 0, topCircleZ) };
                     c2.position.set(0, h, 0);
                     group.add(c2);
@@ -1013,20 +1028,14 @@
             requestAnimationFrame(animate);
             TWEEN.update();
             controls.update();
-            
-            // Auto Rotate logic
             if (isAutoRotate && activeGroup) activeGroup.rotation.y += 0.005;
-
-            // Generation Animation Loop
             if (isGenAnimating) updateGenerationFrame();
-
             renderer.render(scene, camera);
         }
 
-        // --- Helper: UI Update (LARGER FONTS) ---
+        // --- Helper: UI Update ---
         function updateInfoPanel(data) {
             document.getElementById('shape-title').innerText = data.title;
-            
             let html = `
                 <div class="mb-6">
                     <h3 class="text-blue-300 font-bold text-xl mb-2">定义</h3>
@@ -1042,7 +1051,6 @@
                     <h3 class="text-blue-300 font-bold text-xl mb-2">公式</h3>
                     <div class="bg-slate-800 bg-opacity-80 p-5 rounded-lg border border-slate-700">
             `;
-
             for (const [key, val] of Object.entries(data.formulas)) {
                 if (key === 'note') {
                     html += `<p class="text-lg text-gray-400 mt-3 italic border-t border-gray-600 pt-2">${val}</p>`;
@@ -1050,7 +1058,6 @@
                     html += `<div class="math-display text-2xl">$$${val}$$</div>`;
                 }
             }
-
             html += `</div></div>`;
             document.getElementById('shape-content').innerHTML = html;
             if (window.MathJax) MathJax.typesetPromise();
